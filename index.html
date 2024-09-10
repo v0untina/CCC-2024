@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Редактор изображений</title>
+  <link rel="stylesheet" href="./fonts/fonts.css" />
+  <link rel="stylesheet" href="./styles/style.css" />
+</head>
+<body>
+  <h1>Редактор изображений</h1>
+  <div>
+    <h2>Загрузка изображения</h2>
+    <input type="file" id="upload" accept="image/*">
+    <canvas id="imageCanvas"></canvas>
+  </div>
+  <div>
+    <h2>Редактирование изображения</h2>
+    <button id="cropButton">Обрезать изображение</button>
+    <label for="resizeWidth">Ширина:</label>
+    <input type="number" id="resizeWidth">
+    <label for="resizeHeight">Высота:</label>
+    <input type="number" id="resizeHeight">
+    <button id="resizeButton">Изменить размеры</button>
+    <label for="brightness">Яркость:</label>
+    <input type="range" id="brightness" min="0" max="200" value="100">
+    <label for="contrast">Контраст:</label>
+    <input type="range" id="contrast" min="0" max="200" value="100">
+    <label for="saturation">Насыщенность:</label>
+    <input type="range" id="saturation" min="0" max="200" value="100">
+    <h2>Добавить текст</h2>
+    <label for="text">Текст:</label>
+    <input type="text" id="textInput">
+    <label for="textColor">Цвет текста:</label>
+    <input type="color" id="textColor">
+    <button id="addTextButton">Добавить текст</button>
+    <h2>Добавить фигуры</h2>
+    <button id="addCircleButton">Добавить круг</button>
+    <button id="addRectButton">Добавить прямоугольник</button>
+    <button id="undoButton">Отменить действие</button>
+    <button id="redoButton">Вернуть действие</button>
+    <button id="resetButton">Вернуть к исходному</button>
+    <button id="downloadButton">Сохранить изображение</button>
+  </div>
+  <script src="./scripts/script.js"></script>
+</body>
+</html>
