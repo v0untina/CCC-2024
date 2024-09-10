@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,11 +9,16 @@
   <link rel="stylesheet" href="./styles/style.css" />
 </head>
 <body>
-  <h1>Редактор изображений</h1>
-  <div>
-    <h2>Загрузка изображения</h2>
-    <input type="file" id="upload" accept="image/*">
-    <canvas id="imageCanvas"></canvas>
+  <h1 class="label_name">Редактор изображений</h1>
+  <div class="download_image">
+    <div>
+      <canvas class="image_canvas" id="imageCanvas"></canvas>
+    </div>
+    <div id="dropArea">
+      <h2>Перетащите изображение сюда</h2>
+      <input type="file" id="upload" accept="image/*" style="display: none;">
+      <canvas class="image_canvas" id="imageCanvas" style="display: none;"></canvas>
+    </div>
   </div>
   <div>
     <h2>Редактирование изображения</h2>
@@ -42,6 +48,10 @@
     <button id="resetButton">Вернуть к исходному</button>
     <button id="downloadButton">Сохранить изображение</button>
   </div>
+  <div class="circle"></div>
+  <div class="circle_bottom"></div>
+  <div class="circle_center"></div>
   <script src="./scripts/script.js"></script>
 </body>
+
 </html>

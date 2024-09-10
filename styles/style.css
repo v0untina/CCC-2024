@@ -1,0 +1,81 @@
+body {
+  background-color: rgba(12, 26, 17, 0.977);
+  color: white;
+  font-family: Oswald,sans-serif;
+}
+
+.circle,.circle_bottom,.circle_center {
+  width: 362px;
+  height: 362px;
+  background-color: rgba(21, 217, 137, 1);
+  border-radius: 50%;
+  position: absolute;
+  pointer-events: none;
+  z-index: -3;
+}
+
+.circle_bottom{
+  top: 700px;
+  left: 1670px;
+  filter: blur(266px);
+}
+
+.circle{
+  bottom: 700px;
+  right: 1670px;
+  filter: blur(266px);
+}
+
+.circle_center{
+  bottom: 40%;
+  left: 40%;
+  filter: blur(299px);
+}
+
+.image_canvas{
+  position: relative;
+}
+
+.download_image{
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+.canvas-border {
+  border: 2px dashed #02C173;
+  border-radius: 10px;
+}
+
+#dropArea {
+  border: 2px dashed #02C173;
+  border-radius: 10px;
+  text-align: center;
+  width: 300px;
+  height: 300px;
+  cursor: pointer;
+  transition: border-color 0.3s, background-color 0.3s, display 0.3s;
+  display: flex;
+  justify-content: center; 
+  align-items: center; 
+  flex-direction: column;
+   
+}
+
+#dropArea h2 {
+  color: #02C173;
+  transition: opacity 0.3s;
+}
+
+#dropArea.dragover {
+  border-color: #00A86B;
+  background-color: #f0f8f0;
+}
+
+#dropArea.hidden {
+  display: none;
+}
+
+#dropArea.hidden h2 {
+  opacity: 0;
+}

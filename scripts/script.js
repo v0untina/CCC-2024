@@ -7,25 +7,52 @@ let originalImageData = null;
 let history = [];
 let historyStep = -1;
 
-// Загрузка изображения
-document.getElementById("upload").addEventListener("change", function (event) {
+// Изначально скрываем canvas
+canvas.style.display = 'none';
+
+// Функция для обработки загруженных файлов
+function handleFile(file) {
   let reader = new FileReader();
   reader.onload = function (e) {
     image.src = e.target.result;
     image.onload = function () {
+      // Устанавливаем размеры canvas
       canvas.width = image.width;
       canvas.height = image.height;
       hiddenCanvas.width = image.width;
       hiddenCanvas.height = image.height;
+
+      // Отображаем изображение на canvas
       ctx.drawImage(image, 0, 0);
       hiddenCtx.drawImage(image, 0, 0);
 
       originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
+      // Добавляем бордер при загрузке изображения
+      canvas.classList.add('canvas-border');
+      
+      // Показываем canvas
+      canvas.style.display = 'block';
+      
+      // Скрываем текст и бордер в dropArea
+      document.getElementById('dropArea').classList.add('hidden');
+
       saveState();
     };
   };
-  reader.readAsDataURL(event.target.files[0]);
+  reader.readAsDataURL(file);
+}
+
+// Обработка клика на #dropArea
+document.getElementById("dropArea").addEventListener("click", function () {
+  document.getElementById("upload").click();
+});
+
+// Обработка загрузки файла через кнопку
+document.getElementById("upload").addEventListener("change", function (event) {
+  if (event.target.files.length > 0) {
+    handleFile(event.target.files[0]);
+  }
 });
 
 // Сохранить текущее состояние
@@ -33,6 +60,16 @@ function saveState() {
   history = history.slice(0, historyStep + 1);
   history.push(canvas.toDataURL());
   historyStep++;
+}
+
+// Восстановление состояния
+function restoreState(dataUrl) {
+  let img = new Image();
+  img.src = dataUrl;
+  img.onload = function () {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
+  };
 }
 
 // Отмена действия
@@ -51,30 +88,51 @@ document.getElementById("redoButton").addEventListener("click", function () {
   }
 });
 
-// Восстановление состояния
-function restoreState(dataUrl) {
-  let img = new Image();
-  img.src = dataUrl;
-  img.onload = function () {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0);
-  };
-}
+// Сброс к исходному изображению
+document.getElementById("resetButton").addEventListener("click", function () {
+  if (originalImageData) {
+    canvas.width = originalImageData.width;
+    canvas.height = originalImageData.height;
+
+    ctx.putImageData(originalImageData, 0, 0);
+
+    hiddenCanvas.width = originalImageData.width;
+    hiddenCanvas.height = originalImageData.height;
+    hiddenCtx.putImageData(originalImageData, 0, 0);
+
+    ctx.filter = "none";
+
+    saveState();
+  }
+});
+
+// Сохранение изображения
+document.getElementById("downloadButton").addEventListener("click", function () {
+  let link = document.createElement('a');
+  link.download = 'edited-image.png';
+  link.href = canvas.toDataURL();
+  link.click();
+});
 
 // Обрезка изображения
 document.getElementById("cropButton").addEventListener("click", function () {
-  let cropWidth = canvas.width / 2;
-  let cropHeight = canvas.height / 2;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  let canvasWidth = canvas.width;
+  let canvasHeight = canvas.height;
+  let cropWidth = canvasWidth / 2;
+  let cropHeight = canvasHeight / 2;
+  let startX = (canvasWidth - cropWidth) / 2;
+  let startY = (canvasHeight - cropHeight) / 2;
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
   canvas.width = cropWidth;
   canvas.height = cropHeight;
-  ctx.drawImage(hiddenCanvas, 0, 0, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+  ctx.drawImage(hiddenCanvas, startX, startY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
   hiddenCanvas.width = cropWidth;
   hiddenCanvas.height = cropHeight;
   hiddenCtx.clearRect(0, 0, hiddenCanvas.width, hiddenCanvas.height);
   hiddenCtx.drawImage(canvas, 0, 0);
   saveState();
 });
+
 
 // Изменение размеров
 document.getElementById("resizeButton").addEventListener("click", function () {
@@ -139,28 +197,28 @@ document.getElementById("addRectButton").addEventListener("click", function () {
   saveState();
 });
 
-// Сброс к исходному изображению
-document.getElementById("resetButton").addEventListener("click", function () {
-  if (originalImageData) {
-    canvas.width = originalImageData.width;
-    canvas.height = originalImageData.height;
-    
-    ctx.putImageData(originalImageData, 0, 0);
-    
-    hiddenCanvas.width = originalImageData.width;
-    hiddenCanvas.height = originalImageData.height;
-    hiddenCtx.putImageData(originalImageData, 0, 0);
-    
-    ctx.filter = "none";
+// Область для перетаскивания
+let dropArea = document.getElementById('dropArea');
 
-    saveState();
-  }
+dropArea.addEventListener('dragover', function (e) {
+  e.preventDefault();
+  e.stopPropagation();
+  dropArea.classList.add('dragover');
 });
 
-// Сохранение изображения
-document.getElementById("downloadButton").addEventListener("click", function () {
-  let link = document.createElement('a');
-  link.download = 'edited-image.png';
-  link.href = canvas.toDataURL();
-  link.click();
+dropArea.addEventListener('dragleave', function (e) {
+  e.preventDefault();
+  e.stopPropagation();
+  dropArea.classList.remove('dragover');
+});
+
+dropArea.addEventListener('drop', function (e) {
+  e.preventDefault();
+  e.stopPropagation();
+  dropArea.classList.remove('dragover');
+  dropArea.classList.add('hidden');
+  let files = e.dataTransfer.files;
+  if (files.length > 0) {
+    handleFile(files[0]);
+  }
 });
