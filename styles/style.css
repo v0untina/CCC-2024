@@ -32,10 +32,26 @@
   background-image: url("../images/redo.png");
 }
 
+.header__right{
+  display: flex;
+}
+
 .save_img{
   background-color: #12A3F8;
   border-radius: 24px;
-  width: 86px;
+  width: 100px;
+  height: 40px;
+  color: white;
+  border:#12A3F8;
+  font-size: 16px;
+  margin-right: 7px;
+  margin-top: 8px;
+}
+
+.reset_all{
+  background-color: #0b6396;
+  border-radius: 24px;
+  width: 100px;
   height: 40px;
   color: white;
   border:#12A3F8;
@@ -68,6 +84,16 @@
   cursor: pointer;
 }
 
+.reset_all:hover{
+  background-color: #12a4f8d2;
+  cursor: pointer;
+}
+
+.reset_all:active{
+  background-color: #076ba5e5;
+  cursor: pointer;
+}
+
 .canvas-border {
   border: dashed rgba(78, 78, 78, 0.185) 2px;
   border-radius: 5px;
@@ -87,22 +113,65 @@
   flex-direction: column;
   justify-content: flex-start;
   width: 20%;
-  padding: 10px;
   box-sizing: border-box;
   border: 2px solid rgba(78, 78, 78, 0.185);
   border-radius: 10px;
   background-color: rgba(255, 255, 255, 0.842);
 }
 
-.left-sidebar {
+.left-sidebar .first_chooses,
+.left-sidebar .second_chooses {
+  display: flex;
+  flex-direction: column;
+}
 
+.first_chooses{
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(78, 78, 78, 0.185);
+}
+
+.crop_button,.resize_button,.rotate_button,.adjust_button,
+.filter_button,.text_button,.decorate_button{
+  height: 40px;
+  border:none;
+  font-size: 16px;
+  display: flex;
+  padding: 10px 8px;
+  background-color: white;
+  cursor: pointer;
+  color: black;
+}
+
+.crop_button:active, .resize_button:active, .rotate_button:active, .adjust_button:active,
+.filter_button:active, .text_button:active, .decorate_button:active {
+  color: #12A3F8; 
+}
+
+.icon{
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+}
+
+.left-sidebar{
+  width: 15%;
+  padding: 16px;
 }
 
 .right-sidebar {
-
+  width: 17%;
+  display: flex;
+  flex-direction: column; 
+  justify-content: center; 
+  align-items: center; 
+  text-align: center;
+  padding: 10px; 
+  box-sizing: border-box; 
 }
+
+
 .input_width, .input_height{
-  width: 164px;
+  width: 100%;
   height: 48px;
   border-radius: 8px;
   border: 2px solid rgba(78, 78, 78, 0.185);
@@ -123,8 +192,8 @@
   width: 80px;
   height: 40px;
   background-color: #12A3F8;
-  border-radius: 24px;
-  border:#12A3F8;
+  border-radius: 16px;
+  border:none;
   color: white;
   font-size: 16px;
   margin-top: 15px;
@@ -175,7 +244,7 @@
 }
 
 #dropArea p {
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .text_gray{
@@ -216,10 +285,6 @@
 
 #dropArea.hidden {
   display: none;
-}
-
-#dropArea.hidden h2 {
-  opacity: 0;
 }
 
 .footer{

@@ -20,7 +20,11 @@
     <div class="header__center">
       <p class="name__project">Site Name / Blank Page </p>
     </div>
+
     <div class="header__right">
+      <button class="reset_all" id="resetButton">
+        Revert to Original
+      </button>
       <button class="save_img" id="downloadButton">
         Save
       </button>
@@ -30,25 +34,38 @@
   <main class="main">
     <!-- Левая боковая панель -->
     <div class="sidebar left-sidebar">
-      <button id="resizeSettings">Resize</button>
-      <label for="brightness">Яркость:</label>
-      <input type="range" id="brightness" min="0" max="200" value="100">
-      <label for="contrast">Контраст:</label>
-      <input type="range" id="contrast" min="0" max="200" value="100">
-      <label for="saturation">Насыщенность:</label>
-      <input type="range" id="saturation" min="0" max="200" value="100">
-      <h2>Добавить текст</h2>
-      <label for="text">Текст:</label>
-      <input type="text" id="textInput">
-      <label for="textColor">Цвет текста:</label>
-      <input type="color" id="textColor">
-      <button id="addTextButton">Добавить текст</button>
-      <h2>Добавить фигуры</h2>
-      <button id="addCircleButton">Добавить круг</button>
-      <button id="addRectButton">Добавить прямоугольник</button>
-      <button id="undoButton">Отменить действие</button>
-      <button id="redoButton">Вернуть действие</button>
-      <button id="resetButton">Вернуть к исходному</button>
+      <div class="first_chooses">
+        <button class="crop_button">
+          <img src="/images/crop.png" alt="crop" class="icon">
+          Crop
+        </button>
+        <button class="resize_button" id="resizeSettings">
+          <img src="/images/resize.png" alt="resize" class="icon">
+          Resize
+        </button>
+        <button class="rotate_button">
+          <img src="/images/rotate.png" alt="rotate" class="icon">
+          Rotate and flip
+        </button>
+        <button class="adjust_button" id="adjustSettings">
+          <img src="/images/adjust.png" alt="adjust" class="icon">
+          Adjust
+        </button>
+      </div>
+      <div class="second_chooses">
+        <button class="filter_button">
+          <img src="/images/filters.png" alt="filters" class="icon">
+          Filters
+        </button>
+        <button class="text_button" id="textSettings">
+          <img src="/images/text.png" alt="text" class="icon">
+          Text
+        </button>
+        <button class="decorate_button" id="decorateSettings">
+          <img src="/images/decorate.png" alt="decorate" class="icon">
+          Decorate
+        </button>
+      </div>
     </div>
 
     <!-- Центральная часть -->
@@ -79,9 +96,35 @@
           </div>
           <div class="sidebar__checkbox">
             <input class="checkbox" type="checkbox" id="keepAspectRatio" checked>
-            <label  class= "checkbox__label"for="keepAspectRatio">Constrain<br>proportions</label>
+            <label class="checkbox__label" for="keepAspectRatio">Constrain<br>proportions</label>
           </div>
           <button class="submit_button" id="resizeButton">Submit</button>
+        </div>
+      </div>
+      <div class="hidden" id="adjusts">
+        <div class="sidebar_adjusts">
+          <label for="brightness">Яркость:</label>
+          <input type="range" id="brightness" min="0" max="200" value="100">
+          <label for="contrast">Контраст:</label>
+          <input type="range" id="contrast" min="0" max="200" value="100">
+          <label for="saturation">Насыщенность:</label>
+          <input type="range" id="saturation" min="0" max="200" value="100">
+        </div>
+      </div>
+      <div class="hidden" id="text">
+        <div class="sidebar_text">
+          <label for="text">Текст:</label>
+          <input type="text" id="textInput">
+          <label for="textColor">Цвет текста:</label>
+          <input type="color" id="textColor">
+          <button id="addTextButton">Добавить текст</button>
+        </div>
+      </div>
+      <div class="hidden" id="decorate">
+        <div class="sidebar_decorate">
+          <h2>Добавить фигуры</h2>
+          <button id="addCircleButton">Добавить круг</button>
+          <button id="addRectButton">Добавить прямоугольник</button>
         </div>
       </div>
     </div>

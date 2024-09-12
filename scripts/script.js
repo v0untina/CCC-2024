@@ -266,4 +266,13 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById("resizeSettings").addEventListener("click", function () {
     showRightButtons(["resizeInput"]); 
   });
+    document.getElementById("adjustSettings").addEventListener("click", function () {
+      showRightButtons(["adjusts"]); 
+  });
+  document.getElementById("textSettings").addEventListener("click", function () {
+    showRightButtons(["text"]); 
+  });
+document.getElementById("decorateSettings").addEventListener("click", function () {
+  showRightButtons(["decorate"]); 
+  });
 });
