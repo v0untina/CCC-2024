@@ -5,8 +5,9 @@
 }
 
 body {
-  width: 1100px;
+  width: 1850px;
   margin: 0 auto;
+  background-color: rgba(242, 245, 247, 1);
 }
 
 h1,

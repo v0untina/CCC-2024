@@ -7,50 +7,88 @@
   <title>Редактор изображений</title>
   <link rel="stylesheet" href="./fonts/fonts.css" />
   <link rel="stylesheet" href="./styles/style.css" />
+  <link rel="stylesheet" href="./styles/global.css" />
 </head>
+
 <body>
-  <h1 class="label_name">Редактор изображений</h1>
-  <div class="download_image">
-    <div>
-      <canvas class="image_canvas" id="imageCanvas"></canvas>
+  <header class="header">
+    <div class="header__left">
+      <div class="header__left-cross-x"></div>
+      <div class="header__left-cross-undo" id="undoButton"></div>
+      <div class="header__left-cross-redo" id="redoButton"></div>
     </div>
-    <div id="dropArea">
-      <h2>Перетащите изображение сюда</h2>
-      <input type="file" id="upload" accept="image/*" style="display: none;">
-      <canvas class="image_canvas" id="imageCanvas" style="display: none;"></canvas>
+    <div class="header__center">
+      <p class="name__project">Site Name / Blank Page </p>
     </div>
-  </div>
-  <div>
-    <h2>Редактирование изображения</h2>
-    <button id="cropButton">Обрезать изображение</button>
-    <label for="resizeWidth">Ширина:</label>
-    <input type="number" id="resizeWidth">
-    <label for="resizeHeight">Высота:</label>
-    <input type="number" id="resizeHeight">
-    <button id="resizeButton">Изменить размеры</button>
-    <label for="brightness">Яркость:</label>
-    <input type="range" id="brightness" min="0" max="200" value="100">
-    <label for="contrast">Контраст:</label>
-    <input type="range" id="contrast" min="0" max="200" value="100">
-    <label for="saturation">Насыщенность:</label>
-    <input type="range" id="saturation" min="0" max="200" value="100">
-    <h2>Добавить текст</h2>
-    <label for="text">Текст:</label>
-    <input type="text" id="textInput">
-    <label for="textColor">Цвет текста:</label>
-    <input type="color" id="textColor">
-    <button id="addTextButton">Добавить текст</button>
-    <h2>Добавить фигуры</h2>
-    <button id="addCircleButton">Добавить круг</button>
-    <button id="addRectButton">Добавить прямоугольник</button>
-    <button id="undoButton">Отменить действие</button>
-    <button id="redoButton">Вернуть действие</button>
-    <button id="resetButton">Вернуть к исходному</button>
-    <button id="downloadButton">Сохранить изображение</button>
-  </div>
-  <div class="circle"></div>
-  <div class="circle_bottom"></div>
-  <div class="circle_center"></div>
+    <div class="header__right">
+      <button class="save_img" id="downloadButton">
+        Save
+      </button>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Левая боковая панель -->
+    <div class="sidebar left-sidebar">
+      <button id="resizeSettings">Resize</button>
+      <label for="brightness">Яркость:</label>
+      <input type="range" id="brightness" min="0" max="200" value="100">
+      <label for="contrast">Контраст:</label>
+      <input type="range" id="contrast" min="0" max="200" value="100">
+      <label for="saturation">Насыщенность:</label>
+      <input type="range" id="saturation" min="0" max="200" value="100">
+      <h2>Добавить текст</h2>
+      <label for="text">Текст:</label>
+      <input type="text" id="textInput">
+      <label for="textColor">Цвет текста:</label>
+      <input type="color" id="textColor">
+      <button id="addTextButton">Добавить текст</button>
+      <h2>Добавить фигуры</h2>
+      <button id="addCircleButton">Добавить круг</button>
+      <button id="addRectButton">Добавить прямоугольник</button>
+      <button id="undoButton">Отменить действие</button>
+      <button id="redoButton">Вернуть действие</button>
+      <button id="resetButton">Вернуть к исходному</button>
+    </div>
+
+    <!-- Центральная часть -->
+    <div class="center-content">
+      <div>
+        <canvas class="image_canvas" id="imageCanvas"></canvas>
+      </div>
+      <div id="dropArea">
+        <button class="add-image_button"></button>
+        <p>Drop file to upload<br>or select file</p>
+        <p class="text_gray">5 MB Max</p>
+        <input type="file" id="upload" accept="image/*" style="display: none;">
+        <canvas class="image_canvas" id="imageCanvas" style="display: none;"></canvas>
+      </div>
+    </div>
+
+    <!-- Правая боковая панель -->
+    <div class="sidebar right-sidebar" id="rightSidebar">
+      <div class="hidden" id="resizeInput">
+        <div class="sidebar__resize">
+          <div class="sidebar__width">
+            <label for="resizeWidth">Width (px)</label>
+            <input class="input_width" type="number" id="resizeWidth">
+          </div>
+          <div class="sidebar__height">
+            <label for="resizeHeight">Height (px)</label>
+            <input class="input_height" type="number" id="resizeHeight">
+          </div>
+          <div class="sidebar__checkbox">
+            <input class="checkbox" type="checkbox" id="keepAspectRatio" checked>
+            <label  class= "checkbox__label"for="keepAspectRatio">Constrain<br>proportions</label>
+          </div>
+          <button class="submit_button" id="resizeButton">Submit</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  <footer class="footer">
+  </footer>
   <script src="./scripts/script.js"></script>
 </body>
 
