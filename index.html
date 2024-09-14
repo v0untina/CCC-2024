@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
@@ -35,7 +35,7 @@
     <!-- Левая боковая панель -->
     <div class="sidebar left-sidebar">
       <div class="first_chooses">
-        <button class="crop_button">
+        <button class="crop_button" id="cropSettings">
           <img src="/images/crop.png" alt="crop" class="icon">
           Crop
         </button>
@@ -43,7 +43,7 @@
           <img src="/images/resize.png" alt="resize" class="icon">
           Resize
         </button>
-        <button class="rotate_button">
+        <button class="rotate_button" id="rotateSettings">
           <img src="/images/rotate.png" alt="rotate" class="icon">
           Rotate and flip
         </button>
@@ -53,7 +53,7 @@
         </button>
       </div>
       <div class="second_chooses">
-        <button class="filter_button">
+        <button class="filter_button" id="filterSettings">
           <img src="/images/filters.png" alt="filters" class="icon">
           Filters
         </button>
@@ -84,6 +84,29 @@
 
     <!-- Правая боковая панель -->
     <div class="sidebar right-sidebar" id="rightSidebar">
+      <div class="hidden" id="crop">
+        <div class="sidebar__crop">
+          <div class="crop__select">
+            <p class="crop_title">Crop ratio</p>
+            <select name="" id="" class="crop_ratio">
+              <option value="1">
+                1:1
+              </option>
+              <option value="2">
+                16:9
+              </option>
+              <option value="3">
+                4:3
+              </option>
+            </select>
+            <div class="choose_crop">
+              <button class="horizontal"></button>
+              <button class="vertical"></button>
+            </div>
+            <button class="save_crop-button" id="submitButton">Submit</button>
+          </div>
+        </div>
+      </div>
       <div class="hidden" id="resizeInput">
         <div class="sidebar__resize">
           <div class="sidebar__width">
@@ -101,14 +124,48 @@
           <button class="submit_button" id="resizeButton">Submit</button>
         </div>
       </div>
+      <div class="hidden" id="rotate">
+        <div class="sidebar_rotate">
+          <div class="rotate">
+            <p class="rotate_title">Rotate</p>
+            <button class="rotate-left"></button>
+            <button class="rotate-right"></button>
+          </div>
+          <div class="flip">
+            <p class="flip_title">Flip</p>
+            <button class="flip-horizontal"></button>
+            <button class="flip-vertical"></button>
+          </div>
+          <button class="submit_rotate" id="submitButton">Submit</button>
+        </div>
+      </div>
       <div class="hidden" id="adjusts">
         <div class="sidebar_adjusts">
-          <label for="brightness">Яркость:</label>
+          <label for="brightness">Brightness</label>
           <input type="range" id="brightness" min="0" max="200" value="100">
-          <label for="contrast">Контраст:</label>
+          <label for="contrast">Contrast</label>
           <input type="range" id="contrast" min="0" max="200" value="100">
-          <label for="saturation">Насыщенность:</label>
+          <label for="saturation">Saturation</label>
           <input type="range" id="saturation" min="0" max="200" value="100">
+          <label for="exposure">Exposition</label>
+          <input type="range" id="exposure" min="0" max="200" value="100">
+          <button id="submitButton" class="submit_adjust">Submit</button>
+        </div>
+      </div>
+      <div class="hidden" id="filters">
+        <div class="sidebar_filters">
+          <div class="first_line">
+            <button class="none_filter"></button>
+            <p class="none">None</p>
+            <button class="bandw_filter"></button>
+            <p class="sepia">Sepia</p>
+          </div>
+          <div class="second_line">
+            <button class="sepia_filter"></button>
+            <p class="bandw">Black&<br>White</p>
+            <button class="vintage_filter"></button>
+            <p>Vintage</p>
+          </div>
         </div>
       </div>
       <div class="hidden" id="text">
@@ -122,9 +179,16 @@
       </div>
       <div class="hidden" id="decorate">
         <div class="sidebar_decorate">
-          <h2>Добавить фигуры</h2>
-          <button id="addCircleButton">Добавить круг</button>
-          <button id="addRectButton">Добавить прямоугольник</button>
+          <p class="decorate_label">Shapes</p>
+          <div class="decorate_chooses">
+            <button class="circle_button" id="addCircleButton"></button>
+            <button class="rect_button" id="addRectButton"></button>
+          </div>
+        </div>
+        <div class="color_info" id="colorInfo">
+          <label class="color_info-label"for="colorPicker">Color</label>
+          <span class="color_info-label_hex" id="hexColor">#000000</span>
+          <input class="color_picker" type="color" id="colorPicker">
         </div>
       </div>
     </div>

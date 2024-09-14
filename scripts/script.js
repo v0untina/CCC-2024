@@ -9,63 +9,110 @@ document.addEventListener('DOMContentLoaded', function () {
   let historyStep = -1;
   const MAX_WIDTH = 1110;
   const MAX_HEIGHT = 640;
+  let figures = [];
+  let selectedFigure = null;
+  let isDragging = false;
+  let isResizing = false;
+  let offsetX, offsetY;
+  let lastSlider = null;
+  let currentAngle = 0;
+  let isFlippedHorizontally = false;
+  let isFlippedVertically = false;
+  const activeIcons = {
+    crop_button: '/images/crop-active.png',
+    resize_button: '/images/resize-active.png',
+    rotate_button: '/images/rotate-active.png',
+    adjust_button: '/images/adjust-active.png',
+    filter_button: '/images/filters-active.png',
+    text_button: '/images/text-active.png',
+    decorate_button: '/images/decorate-active.png'
+  };
 
-  // Изначально скрываем canvas
+  const defaultIcons = {
+    crop_button: '/images/crop.png',
+    resize_button: '/images/resize.png',
+    rotate_button: '/images/rotate.png',
+    adjust_button: '/images/adjust.png',
+    filter_button: '/images/filters.png',
+    text_button: '/images/text.png',
+    decorate_button: '/images/decorate.png'
+  };
+
   canvas.style.display = 'none';
 
-  // Функция для обработки загруженных файлов
   function handleFile(file) {
     let reader = new FileReader();
     reader.onload = function (e) {
       image.src = e.target.result;
       image.onload = function () {
-        // Устанавливаем размеры canvas
-        canvas.width = image.width;
-        canvas.height = image.height;
-        hiddenCanvas.width = image.width;
-        hiddenCanvas.height = image.height;
-
-        // Отображаем изображение на canvas
-        ctx.drawImage(image, 0, 0);
-        hiddenCtx.drawImage(image, 0, 0);
-
+        let scale = Math.min(MAX_WIDTH / image.width, MAX_HEIGHT / image.height);
+        let newWidth = image.width * scale;
+        let newHeight = image.height * scale;
+  
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        hiddenCanvas.width = newWidth;
+        hiddenCanvas.height = newHeight;
+  
+        ctx.drawImage(image, 0, 0, newWidth, newHeight);
+        hiddenCtx.drawImage(image, 0, 0, newWidth, newHeight);
+  
         originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-        // Добавляем бордер при загрузке изображения
         canvas.classList.add('canvas-border');
-        
-        // Показываем canvas
         canvas.style.display = 'block';
-        
-        // Скрываем текст и бордер в dropArea
         document.getElementById('dropArea').classList.add('hidden');
-
         saveState();
       };
     };
     reader.readAsDataURL(file);
   }
 
-  // Обработка клика на #dropArea
+  function handleDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer.files.length > 0) {
+      handleFile(event.dataTransfer.files[0]);
+    }
+  }
+
+  function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   document.getElementById("dropArea").addEventListener("click", function () {
     document.getElementById("upload").click();
   });
 
-  // Обработка загрузки файла через кнопку
+  document.getElementById("dropArea").addEventListener("dragover", function (event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.classList.add("dragover");
+  });
+  
+  document.getElementById("dropArea").addEventListener("dragleave", function () {
+    this.classList.remove("dragover");
+  });
+  
+  document.getElementById("dropArea").addEventListener("drop", function () {
+    this.classList.remove("dragover");
+  });
+
   document.getElementById("upload").addEventListener("change", function (event) {
     if (event.target.files.length > 0) {
       handleFile(event.target.files[0]);
     }
   });
 
-  // Сохранить текущее состояние
+  document.getElementById("dropArea").addEventListener("drop", handleDrop);
+  document.getElementById("dropArea").addEventListener("dragover", handleDragOver);
+
   function saveState() {
     history = history.slice(0, historyStep + 1);
     history.push(canvas.toDataURL());
     historyStep++;
   }
 
-  // Восстановление состояния
   function restoreState(dataUrl) {
     let img = new Image();
     img.src = dataUrl;
@@ -74,16 +121,97 @@ document.addEventListener('DOMContentLoaded', function () {
       ctx.drawImage(img, 0, 0);
     };
   }
+  
+  document.querySelector('.none_filter').addEventListener('click', function() {
+    applyImageFilter('none');
+  });
+  
+  document.querySelector('.sepia_filter').addEventListener('click', function() {
+      applyImageFilter('grayscale');
+  });
+  
+  document.querySelector('.bandw_filter').addEventListener('click', function() {
+      applyImageFilter('sepia');
+  });
+  
+  document.querySelector('.vintage_filter').addEventListener('click', function() {
+      applyImageFilter('vintage');
+  });
 
-  // Отмена действия
+  function applyImageFilter(filterType) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.filter = getFilterCSS(filterType);
+    ctx.drawImage(hiddenCanvas, 0, 0);
+    saveState();
+  }
+
+  function getFilterCSS(filterType) {
+      switch (filterType) {
+          case 'none':
+              return 'none';
+          case 'sepia':
+              return 'sepia(100%)';
+          case 'grayscale':
+              return 'grayscale(100%)';
+          case 'vintage':
+              return 'sepia(50%) contrast(85%) saturate(120%)';
+          default:
+              return 'none';
+      }
+  }
+
   document.getElementById("undoButton").addEventListener("click", function () {
     if (historyStep > 0) {
-      historyStep--;
-      restoreState(history[historyStep]);
+        historyStep--;
+        restoreState(history[historyStep]);
+
+        if (lastSlider) {
+            document.getElementById(lastSlider).value = 100; 
+            document.getElementById("brightness").value = 100;
+            document.getElementById("contrast").value = 100;
+            document.getElementById("saturation").value = 100;
+            document.getElementById("exposure").value = 100;
+            applyFilters();
+        }
     }
   });
 
-  // Возврат действия
+  document.getElementById("brightness").addEventListener("input", applyFilters);
+  document.getElementById("contrast").addEventListener("input", applyFilters);
+  document.getElementById("saturation").addEventListener("input", applyFilters);
+  document.getElementById("exposure").addEventListener("input", applyFilters);
+
+
+  
+function applyFilters() {
+    const brightness = document.getElementById("brightness").value;
+    const contrast = document.getElementById("contrast").value;
+    const saturation = document.getElementById("saturation").value;
+    const exposure = document.getElementById("exposure").value;
+
+    const exposureEffect = exposure / 100;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Применяем фильтры
+    ctx.filter = `brightness(${brightness * exposureEffect}%) contrast(${contrast}%) saturate(${saturation}%)`;
+
+    // Применяем текущие трансформации поворота и переворота
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((currentAngle * Math.PI) / 180);
+    const scaleX = isFlippedHorizontally ? -1 : 1;
+    const scaleY = isFlippedVertically ? -1 : 1;
+    ctx.scale(scaleX, scaleY);
+
+    // Рисуем изображение с учётом трансформаций
+    ctx.drawImage(hiddenCanvas, -canvas.width / 2, -canvas.height / 2);
+    ctx.restore();
+
+    saveState();
+}
+
+
   document.getElementById("redoButton").addEventListener("click", function () {
     if (historyStep < history.length - 1) {
       historyStep++;
@@ -91,25 +219,76 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // Сброс к исходному изображению
   document.getElementById("resetButton").addEventListener("click", function () {
     if (originalImageData) {
       canvas.width = originalImageData.width;
       canvas.height = originalImageData.height;
-
       ctx.putImageData(originalImageData, 0, 0);
-
       hiddenCanvas.width = originalImageData.width;
       hiddenCanvas.height = originalImageData.height;
       hiddenCtx.putImageData(originalImageData, 0, 0);
-
       ctx.filter = "none";
-
       saveState();
     }
   });
 
-  // Сохранение изображения
+  document.getElementById("brightness").addEventListener("input", function() {
+    lastSlider = "brightness";
+    applyFilters();
+  });
+  document.getElementById("contrast").addEventListener("input", function() {
+    lastSlider = "contrast";
+    applyFilters();
+  });
+  document.getElementById("saturation").addEventListener("input", function() {
+    lastSlider = "saturation";
+    applyFilters();
+  });
+  document.getElementById("exposure").addEventListener("input", function() {
+    lastSlider = "exposure";
+    applyFilters();
+  });
+
+  function rotateImage(angle) {
+    currentAngle = (currentAngle + angle) % 360;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((currentAngle * Math.PI) / 180);
+    const scaleX = isFlippedHorizontally ? -1 : 1;
+    const scaleY = isFlippedVertically ? -1 : 1;
+    ctx.scale(scaleX, scaleY);
+    ctx.drawImage(hiddenCanvas, -canvas.width / 2, -canvas.height / 2);
+    ctx.restore();
+    saveState();
+}
+
+
+  function flipImage(direction) {
+    if (direction === 'horizontal') {
+      isFlippedHorizontally = !isFlippedHorizontally;
+    } else if (direction === 'vertical') {
+      isFlippedVertically = !isFlippedVertically;
+    }
+    rotateImage(0);
+  }
+
+  document.querySelector('.rotate-left').addEventListener('click', function () {
+    rotateImage(-90);
+  });
+
+  document.querySelector('.rotate-right').addEventListener('click', function () {
+    rotateImage(90);
+  });
+
+  document.querySelector('.flip-horizontal').addEventListener('click', function () {
+    flipImage('horizontal');
+  });
+
+  document.querySelector('.flip-vertical').addEventListener('click', function () {
+    flipImage('vertical');
+  });
+  
   document.getElementById("downloadButton").addEventListener("click", function () {
     let link = document.createElement('a');
     link.download = 'edited-image.png';
@@ -117,7 +296,107 @@ document.addEventListener('DOMContentLoaded', function () {
     link.click();
   });
 
-  // Изменение размеров
+  function showColorInfo() {
+    const colorInfo = document.getElementById("colorInfo");
+    colorInfo.style.display = "block";
+  }
+
+  document.getElementById("colorPicker").addEventListener("input", function () {
+    if (selectedFigure) {
+      selectedFigure.color = this.value;
+      drawFigures();
+    }
+  });
+
+  function drawFigures() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0); // Отображаем изображение
+  
+    figures.forEach(figure => {
+      ctx.fillStyle = figure.color;
+      ctx.beginPath();
+  
+      if (figure.type === 'circle') {
+        ctx.arc(figure.x, figure.y, figure.radius, 0, Math.PI * 2);
+        ctx.fill();
+        if (figure === selectedFigure) {
+          ctx.strokeStyle = 'yellow';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          drawResizeHandles(figure);
+        }
+      } else if (figure.type === 'rect') {
+        // Проверяем, чтобы прямоугольник не выходил за границы canvas
+        if (figure.x < 0) figure.x = 0;
+        if (figure.y < 0) figure.y = 0;
+        if (figure.x + figure.width > canvas.width) figure.width = canvas.width - figure.x;
+        if (figure.y + figure.height > canvas.height) figure.height = canvas.height - figure.y;
+  
+        ctx.fillRect(figure.x, figure.y, figure.width, figure.height);
+        if (figure === selectedFigure) {
+          ctx.strokeStyle = 'yellow';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(figure.x, figure.y, figure.width, figure.height);
+          drawResizeHandles(figure);
+        }
+      }
+    });
+  }
+  
+
+  function drawResizeHandles(figure) {
+    const size = 10;
+    ctx.fillStyle = 'yellow';
+    ctx.beginPath();
+
+    if (figure.type === 'circle') {
+      // Ручки для круга
+      ctx.arc(figure.x + figure.radius, figure.y, size, 0, Math.PI * 2);
+      ctx.arc(figure.x - figure.radius, figure.y, size, 0, Math.PI * 2);
+      ctx.arc(figure.x, figure.y + figure.radius, size, 0, Math.PI * 2);
+      ctx.arc(figure.x, figure.y - figure.radius, size, 0, Math.PI * 2);
+    } else if (figure.type === 'rect') {
+      // Ручки для прямоугольника
+      ctx.arc(figure.x, figure.y, size, 0, Math.PI * 2);
+      ctx.arc(figure.x + figure.width, figure.y, size, 0, Math.PI * 2);
+      ctx.arc(figure.x, figure.y + figure.height, size, 0, Math.PI * 2);
+      ctx.arc(figure.x + figure.width, figure.y + figure.height, size, 0, Math.PI * 2);
+    }
+
+    ctx.fill();
+  }
+
+  document.getElementById("addCircleButton").addEventListener("click", function () {
+    showColorInfo();
+    let circle = {
+      type: 'circle',
+      x: 150,
+      y: 150,
+      radius: 50,
+      color: "rgba(255,0,0,0.5)"
+    };
+    figures.push(circle);
+    selectedFigure = circle;
+    drawFigures();
+    saveState();
+  });
+
+  document.getElementById("addRectButton").addEventListener("click", function () {
+    showColorInfo();
+    let rect = {
+      type: 'rect',
+      x: 200,
+      y: 200,
+      width: 100,
+      height: 50,
+      color: "rgba(0,0,255,0.5)"
+    };
+    figures.push(rect);
+    selectedFigure = rect;
+    drawFigures();
+    saveState();
+  });
+
   document.getElementById("resizeButton").addEventListener("click", function () {
     let newWidth = document.getElementById("resizeWidth").value;
     let newHeight = document.getElementById("resizeHeight").value;
@@ -126,131 +405,178 @@ document.addEventListener('DOMContentLoaded', function () {
     newWidth = parseInt(newWidth);
     newHeight = parseInt(newHeight);
 
-    if (isNaN(newWidth) || isNaN(newHeight)) {
-      alert("Пожалуйста, введите допустимые размеры.");
-      return;
-    }
-
-    // Применение максимальных размеров
     if (newWidth > MAX_WIDTH) {
-      newWidth = MAX_WIDTH;
+        newWidth = MAX_WIDTH;
     }
     if (newHeight > MAX_HEIGHT) {
-      newHeight = MAX_HEIGHT;
+        newHeight = MAX_HEIGHT;
     }
 
     if (keepAspectRatio) {
-      let aspectRatio = image.width / image.height;
-      if (newWidth / newHeight > aspectRatio) {
-        newWidth = newHeight * aspectRatio;
-      } else {
-        newHeight = newWidth / aspectRatio;
-      }
+        let aspectRatio = image.width / image.height;
+        if (newWidth / newHeight > aspectRatio) {
+            newWidth = newHeight * aspectRatio;
+        } else {
+            newHeight = newWidth / aspectRatio;
+        }
     }
+
+    let previousFilters = ctx.filter; // Сохраняем текущее состояние фильтров
+
+    // Устанавливаем новый размер холста
     canvas.width = newWidth;
     canvas.height = newHeight;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     let x = 0;
     let y = 0;
     let width = newWidth;
     let height = newHeight;
 
     if (width > canvas.width) {
-      width = canvas.width;
-      height = (width / newWidth) * newHeight;
+        width = canvas.width;
+        height = (width / newWidth) * newHeight;
     }
 
     if (height > canvas.height) {
-      height = canvas.height;
-      width = (height / newHeight) * newWidth;
+        height = canvas.height;
+        width = (height / newHeight) * newWidth;
     }
 
     x = (canvas.width - width) / 2;
     y = (canvas.height - height) / 2;
 
+    // Рисуем изображение с новым размером
     ctx.drawImage(image, x, y, width, height);
     hiddenCanvas.width = newWidth;
     hiddenCanvas.height = newHeight;
     hiddenCtx.drawImage(image, x, y, width, height);
 
-    saveState();
-  });
+    // Восстанавливаем фильтры
+    ctx.filter = previousFilters;
 
-  // Изменение яркости, контраста, насыщенности
-  document.getElementById("brightness").addEventListener("input", applyFilters);
-  document.getElementById("contrast").addEventListener("input", applyFilters);
-  document.getElementById("saturation").addEventListener("input", applyFilters);
-
-  function applyFilters() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.filter = `brightness(${document.getElementById("brightness").value}%) contrast(${document.getElementById("contrast").value}%) saturate(${document.getElementById("saturation").value}%)`;
-    ctx.drawImage(hiddenCanvas, 0, 0);
     saveState();
+});
+
+  
+  function getClickedFigure(x, y) {
+    for (let i = figures.length - 1; i >= 0; i--) {
+      let figure = figures[i];
+      if (figure.type === 'circle') {
+        let distance = Math.sqrt((x - figure.x) ** 2 + (y - figure.y) ** 2);
+        if (distance <= figure.radius) {
+          return figure;
+        }
+      } else if (figure.type === 'rect') {
+        if (x >= figure.x && x <= figure.x + figure.width &&
+            y >= figure.y && y <= figure.y + figure.height) {
+          return figure;
+        }
+      }
+    }
+    return null;
   }
 
-  // Добавление текста
-  document.getElementById("addTextButton").addEventListener("click", function () {
-    let text = document.getElementById("textInput").value;
-    let color = document.getElementById("textColor").value;
-    if (text) {
-      ctx.fillStyle = color;
-      ctx.font = "30px Arial";
-      ctx.fillText(text, 50, 50);
-      hiddenCtx.fillStyle = color;
-      hiddenCtx.font = "30px Arial";
-      hiddenCtx.fillText(text, 50, 50); // Сохраняем текст в скрытый canvas
-      saveState();
+  function getResizeHandle(x, y) {
+    if (selectedFigure) {
+      const size = 10;
+      if (selectedFigure.type === 'circle') {
+        const radius = selectedFigure.radius;
+        if ((Math.abs(x - (selectedFigure.x + radius)) <= size && Math.abs(y - selectedFigure.y) <= size) ||
+            (Math.abs(x - (selectedFigure.x - radius)) <= size && Math.abs(y - selectedFigure.y) <= size) ||
+            (Math.abs(x - selectedFigure.x) <= size && Math.abs(y - (selectedFigure.y + radius)) <= size) ||
+            (Math.abs(x - selectedFigure.x) <= size && Math.abs(y - (selectedFigure.y - radius)) <= size)) {
+          return 'circle';
+        }
+      } else if (selectedFigure.type === 'rect') {
+        if ((Math.abs(x - selectedFigure.x) <= size && Math.abs(y - selectedFigure.y) <= size) ||
+            (Math.abs(x - (selectedFigure.x + selectedFigure.width)) <= size && Math.abs(y - selectedFigure.y) <= size) ||
+            (Math.abs(x - selectedFigure.x) <= size && Math.abs(y - (selectedFigure.y + selectedFigure.height)) <= size) ||
+            (Math.abs(x - (selectedFigure.x + selectedFigure.width)) <= size && Math.abs(y - (selectedFigure.y + selectedFigure.height)) <= size)) {
+          return 'rect';
+        }
+      }
+    }
+    return null;
+  }
+
+  function resizeFigure(figure, mouseX, mouseY) {
+    if (figure.type === 'circle') {
+      let dx = mouseX - figure.x;
+      let dy = mouseY - figure.y;
+      figure.radius = Math.sqrt(dx * dx + dy * dy);
+    } else if (figure.type === 'rect') {
+      figure.width = mouseX - figure.x;
+      figure.height = mouseY - figure.y;
+    }
+  }
+  
+  canvas.addEventListener('mousedown', function (e) {
+    let mouseX = e.offsetX;
+    let mouseY = e.offsetY;
+    
+    let resizeHandle = getResizeHandle(mouseX, mouseY);
+    if (resizeHandle) {
+      isDragging = false;
+      isResizing = true;
+      offsetX = mouseX;
+      offsetY = mouseY;
+    } else {
+      let clickedFigure = getClickedFigure(mouseX, mouseY);
+      if (clickedFigure) {
+        selectedFigure = clickedFigure;
+        isDragging = true;
+        offsetX = mouseX - selectedFigure.x;
+        offsetY = mouseY - selectedFigure.y;
+      } else {
+        selectedFigure = null;
+      }
+    }
+    drawFigures();
+  });
+  
+  canvas.addEventListener('mousemove', function (e) {
+    if (isDragging && selectedFigure) {
+      let mouseX = e.offsetX;
+      let mouseY = e.offsetY;
+    
+      if (selectedFigure.type === 'circle') {
+        selectedFigure.x = mouseX - offsetX;
+        selectedFigure.y = mouseY - offsetY;
+      } else if (selectedFigure.type === 'rect') {
+        selectedFigure.x = mouseX - offsetX;
+        selectedFigure.y = mouseY - offsetY;
+      }
+      drawFigures();
+    } else if (isResizing && selectedFigure) {
+      resizeFigure(selectedFigure, e.offsetX, e.offsetY);
+      drawFigures();
     }
   });
-
-  // Добавление фигур
-  document.getElementById("addCircleButton").addEventListener("click", function () {
-    ctx.fillStyle = "rgba(255,0,0,0.5)";
-    ctx.beginPath();
-    ctx.arc(150, 150, 50, 0, Math.PI * 2);
-    ctx.fill();
-    hiddenCtx.fillStyle = "rgba(255,0,0,0.5)";
-    hiddenCtx.beginPath();
-    hiddenCtx.arc(150, 150, 50, 0, Math.PI * 2);
-    hiddenCtx.fill();
+  
+  canvas.addEventListener('mouseup', function () {
+    isDragging = false;
+    isResizing = false;
     saveState();
   });
+  
 
-  document.getElementById("addRectButton").addEventListener("click", function () {
-    ctx.fillStyle = "rgba(0,0,255,0.5)";
-    ctx.fillRect(200, 200, 100, 50);
-    hiddenCtx.fillStyle = "rgba(0,0,255,0.5)";
-    hiddenCtx.fillRect(200, 200, 100, 50);
-    saveState();
+  const buttons = document.querySelectorAll('.crop_button, .resize_button, .rotate_button, .adjust_button, .filter_button, .text_button, .decorate_button');
+
+  buttons.forEach(button => {
+    button.addEventListener('click', function () {
+      buttons.forEach(btn => {
+        btn.classList.remove('active');
+        const icon = btn.querySelector('img');
+        icon.src = defaultIcons[btn.classList[0]];
+      });
+      this.classList.add('active');
+
+      const icon = this.querySelector('img');
+      icon.src = activeIcons[this.classList[0]];
+    });
   });
 
-  // Область для перетаскивания
-  let dropArea = document.getElementById('dropArea');
-
-  dropArea.addEventListener('dragover', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    dropArea.classList.add('dragover');
-  });
-
-  dropArea.addEventListener('dragleave', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    dropArea.classList.remove('dragover');
-  });
-
-  dropArea.addEventListener('drop', function (e) {
-    e.preventDefault();
-    e.stopPropagation();
-    dropArea.classList.remove('dragover');
-    dropArea.classList.add('hidden');
-    let files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleFile(files[0]);
-    }
-  });
-
-  // Функция для отображения кнопок в правом сайдбаре
   function showRightButtons(buttonIds) {
     document.querySelectorAll('.right-sidebar > div').forEach(div => {
       div.classList.add('hidden');
@@ -264,15 +590,24 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   document.getElementById("resizeSettings").addEventListener("click", function () {
-    showRightButtons(["resizeInput"]); 
+    showRightButtons(["resizeInput"]);
   });
-    document.getElementById("adjustSettings").addEventListener("click", function () {
-      showRightButtons(["adjusts"]); 
+  document.getElementById("adjustSettings").addEventListener("click", function () {
+    showRightButtons(["adjusts"]);
   });
   document.getElementById("textSettings").addEventListener("click", function () {
-    showRightButtons(["text"]); 
+    showRightButtons(["text"]);
   });
-document.getElementById("decorateSettings").addEventListener("click", function () {
-  showRightButtons(["decorate"]); 
+  document.getElementById("decorateSettings").addEventListener("click", function () {
+    showRightButtons(["decorate"]);
+  });
+  document.getElementById("cropSettings").addEventListener("click", function () {
+    showRightButtons(["crop"]);
+  });
+  document.getElementById("rotateSettings").addEventListener("click", function () {
+    showRightButtons(["rotate"]);
+  });
+  document.getElementById("filterSettings").addEventListener("click", function () {
+    showRightButtons(["filters"]);
   });
 });

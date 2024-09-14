@@ -1,11 +1,8 @@
 @font-face {
   font-family: 'Avenir Next Cyr';
-  src: url('AvenirNextCyr-Bold.eot');
-  src: local('Avenir Next Cyr Bold'), local('AvenirNextCyr-Bold'),
-      url('AvenirNextCyr-Bold.eot?#iefix') format('embedded-opentype'),
-      url('AvenirNextCyr-Bold.woff2') format('woff2'),
-      url('AvenirNextCyr-Bold.woff') format('woff'),
-      url('AvenirNextCyr-Bold.ttf') format('truetype');
+  src:
+      url(./AvenirNextCyr-Bold.woff2) format('woff2'),
+      url(./AvenirNextCyr-Bold.woff) format('woff');
   font-weight: bold;
   font-style: normal;
 }
