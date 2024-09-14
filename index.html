@@ -170,27 +170,53 @@
       </div>
       <div class="hidden" id="text">
         <div class="sidebar_text">
-          <label for="text">Текст:</label>
-          <input type="text" id="textInput">
-          <label for="textColor">Цвет текста:</label>
-          <input type="color" id="textColor">
-          <button id="addTextButton">Добавить текст</button>
+            <div class="font">
+                <p>Font</p>
+                <select name="font" id="fontSelect">
+                    <option value="Avenir Next">Avenir Next</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Impact">Impact</option>
+                    <option value="Book Antiqua">Book Antiqua</option>
+                    <option value="Comic Sans MS">Comic Sans MS</option>
+                </select>
+            </div>
+            <div class="size">
+                <p>Size</p>
+                <select name="size" id="sizeSelect">
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="14">14</option>
+                    <option value="16">16</option>
+                    <option value="18">18</option>
+                    <option value="20">20</option>
+                    <option value="24">24</option>
+                </select>
+            </div>
+            <div class="font-color">
+                <label class="color_font" for="colorPickerFont">Color</label>
+                <input class="color_picker" type="color" id="colorPickerFont">
+            </div>
+            <div class="create-text">
+                <button id="addTextButton">Add Text</button>
+            </div>
+        </div>
+    </div>    
+    <div class="hidden" id="decorate">
+      <div class="sidebar_decorate">
+        <p class="decorate_label">Shapes</p>
+        <div class="decorate_chooses">
+          <button class="circle_button" id="addCircleButton"></button>
+          <button class="rect_button" id="addRectButton"></button>
         </div>
       </div>
-      <div class="hidden" id="decorate">
-        <div class="sidebar_decorate">
-          <p class="decorate_label">Shapes</p>
-          <div class="decorate_chooses">
-            <button class="circle_button" id="addCircleButton"></button>
-            <button class="rect_button" id="addRectButton"></button>
-          </div>
-        </div>
-        <div class="color_info" id="colorInfo">
-          <label class="color_info-label"for="colorPicker">Color</label>
-          <span class="color_info-label_hex" id="hexColor">#000000</span>
-          <input class="color_picker" type="color" id="colorPicker">
-        </div>
+      <div class="color_info" id="colorInfo">
+        <label class="color_info-label" for="colorPicker">Color</label>
+        <input class="color_picker" type="color" id="colorPicker">
       </div>
+    </div>
     </div>
 
   </main>

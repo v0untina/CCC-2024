@@ -17,6 +17,12 @@ document.addEventListener('DOMContentLoaded', function () {
   let isFlippedHorizontally = false;
   let isFlippedVertically = false;
   let imageX = 0, imageY = 0;
+  let cropDirection = 'horizontal'; 
+  let cropRatio = 1; 
+  let texts = [];
+  let selectedText = null;
+  let isDraggingText = false;
+  
 
 
   const activeIcons = {
@@ -104,11 +110,11 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById("dropArea").addEventListener("drop", handleDrop);
   document.getElementById("dropArea").addEventListener("dragover", handleDragOver);
 
-  function saveState() {
+function saveState() {
     let imageData = canvas.toDataURL();
     let state = {
         image: imageData,
-        figures: figures,
+        figures: figures.map(figure => ({ ...figure })), // Клонируем фигуры
         filters: ctx.filter,
         position: { x: imageX, y: imageY }, // Положение изображения
         angle: currentAngle,
@@ -120,16 +126,76 @@ document.addEventListener('DOMContentLoaded', function () {
     historyStep = history.length - 1;
 }
 
+
   
-  function restoreState(state) {
-    let img = new Image();
-    img.src = state.image;
-    img.onload = function () {
+function restoreState(state) {
+  let img = new Image();
+  img.src = state.image;
+  img.onload = function () {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
-      figures = state.figures;
+      ctx.filter = state.filters; // Восстанавливаем фильтры
+      figures = state.figures; // Восстанавливаем фигуры
       drawFigures();
-    };
+  };
+}
+
+
+  document.querySelector('.crop_ratio').addEventListener('change', function () {
+    const selectedRatio = this.value;
+    if (selectedRatio === "1") {
+      cropRatio = 1; // 1:1
+    } else if (selectedRatio === "2") {
+      cropRatio = 16 / 9; // 16:9
+    } else if (selectedRatio === "3") {
+      cropRatio = 4 / 3; // 4:3
+    }
+  });
+  document.querySelector('.horizontal').addEventListener('click', function () {
+    cropDirection = 'horizontal';
+  });
+
+  document.querySelector('.vertical').addEventListener('click', function () {
+    cropDirection = 'vertical';
+  });
+
+  document.querySelector('.save_crop-button').addEventListener('click', function () {
+    cropImage();
+    saveState(); // Сохраняем текущее состояние после обрезки
+  });
+
+  function cropImage() {
+    let canvasWidth = canvas.width;
+    let canvasHeight = canvas.height;
+
+    let newWidth, newHeight;
+
+    // Рассчитываем новые размеры в зависимости от выбранного соотношения сторон и направления
+    if (cropDirection === 'horizontal') {
+      newWidth = canvasWidth;
+      newHeight = canvasWidth / cropRatio;
+      if (newHeight > canvasHeight) {
+        newHeight = canvasHeight;
+        newWidth = newHeight * cropRatio;
+      }
+    } else {
+      newHeight = canvasHeight;
+      newWidth = canvasHeight / cropRatio;
+      if (newWidth > canvasWidth) {
+        newWidth = canvasWidth;
+        newHeight = newWidth * cropRatio;
+      }
+    }
+
+    // Обрезаем изображение
+    const croppedImage = ctx.getImageData((canvasWidth - newWidth) / 2, (canvasHeight - newHeight) / 2, newWidth, newHeight);
+    
+    // Устанавливаем новый размер canvas
+    canvas.width = newWidth;
+    canvas.height = newHeight;
+
+    // Отображаем обрезанное изображение
+    ctx.putImageData(croppedImage, 0, 0);
   }
   
   document.querySelector('.none_filter').addEventListener('click', function() {
@@ -173,15 +239,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById("undoButton").addEventListener("click", function () {
     if (historyStep > 0) {
-      historyStep--;
-      restoreState(history[historyStep]);
-
-      if (lastSlider) {
-        document.getElementById(lastSlider).value = 100;
-        applyFilters();
-      }
+        historyStep--;
+        restoreState(history[historyStep]);
+        
+        // Сбросим lastSlider, если это необходимо
+        if (lastSlider) {
+            document.getElementById(lastSlider).value = 100;
+            applyFilters();
+        }
     }
-  });
+});
+
 
   document.getElementById("brightness").addEventListener("input", applyFilters);
   document.getElementById("contrast").addEventListener("input", applyFilters);
@@ -271,7 +339,8 @@ function flipImage(direction) {
     } else if (direction === 'vertical') {
         isFlippedVertically = !isFlippedVertically;
     }
-    rotateImage(0); // Перерисовываем с учетом новых настроек отражения
+    rotateImage(0);
+    saveState();
 }
 
 
@@ -310,41 +379,114 @@ function flipImage(direction) {
     }
   });
 
-  function drawFigures() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, 0, 0); // Отображаем изображение
+  document.getElementById('addTextButton').addEventListener('click', function() {
+    const textValue = prompt('Enter text:');
+    if (!textValue) return;
+
+    const font = document.getElementById('fontSelect').value;
+    const size = document.getElementById('sizeSelect').value;
+    const color = document.getElementById('colorPickerFont').value;
+
+    let text = {
+        type: 'text',
+        x: 100,  // Начальная позиция X
+        y: 100,  // Начальная позиция Y
+        text: textValue,
+        font: font,
+        size: size,
+        color: color
+    };
+    
+    texts.push(text);
+    selectedText = text;
+    drawFigures();
+    saveState();
+});
   
-    figures.forEach(figure => {
+
+function drawFigures() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, 0, 0);
+
+  figures.forEach(figure => {
       ctx.fillStyle = figure.color;
       ctx.beginPath();
-  
+
       if (figure.type === 'circle') {
-        ctx.arc(figure.x, figure.y, figure.radius, 0, Math.PI * 2);
-        ctx.fill();
-        if (figure === selectedFigure) {
-          ctx.strokeStyle = 'yellow';
-          ctx.lineWidth = 3;
-          ctx.stroke();
-          drawResizeHandles(figure);
-        }
+          ctx.arc(figure.x, figure.y, figure.radius, 0, Math.PI * 2);
+          ctx.fill();
+          if (figure === selectedFigure) {
+              ctx.strokeStyle = 'yellow';
+              ctx.lineWidth = 3;
+              ctx.stroke();
+              drawResizeHandles(figure);
+          }
       } else if (figure.type === 'rect') {
-        // Проверяем, чтобы прямоугольник не выходил за границы canvas
-        if (figure.x < 0) figure.x = 0;
-        if (figure.y < 0) figure.y = 0;
-        if (figure.x + figure.width > canvas.width) figure.width = canvas.width - figure.x;
-        if (figure.y + figure.height > canvas.height) figure.height = canvas.height - figure.y;
-  
-        ctx.fillRect(figure.x, figure.y, figure.width, figure.height);
-        if (figure === selectedFigure) {
-          ctx.strokeStyle = 'yellow';
-          ctx.lineWidth = 3;
-          ctx.strokeRect(figure.x, figure.y, figure.width, figure.height);
-          drawResizeHandles(figure);
-        }
+          if (figure.x < 0) figure.x = 0;
+          if (figure.y < 0) figure.y = 0;
+          if (figure.x + figure.width > canvas.width) figure.width = canvas.width - figure.x;
+          if (figure.y + figure.height > canvas.height) figure.height = canvas.height - figure.y;
+
+          ctx.fillRect(figure.x, figure.y, figure.width, figure.height);
+          if (figure === selectedFigure) {
+              ctx.strokeStyle = 'yellow';
+              ctx.lineWidth = 3;
+              ctx.strokeRect(figure.x, figure.y, figure.width, figure.height);
+              drawResizeHandles(figure);
+          }
       }
-    });
+  });
+
+  texts.forEach(text => {
+      ctx.font = `${text.size}px ${text.font}`;
+      ctx.fillStyle = text.color;
+      ctx.fillText(text.text, text.x, text.y);
+      
+      // Рисуем прямоугольный бордер вокруг текста
+      const textMetrics = ctx.measureText(text.text);
+      const textWidth = textMetrics.width;
+      const textHeight = text.size;
+      ctx.strokeStyle = 'yellow';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(text.x, text.y - textHeight, textWidth, textHeight);
+      
+      if (text === selectedText) {
+          drawTextResizeHandles(text);
+      }
+  });
+}
+
+function drawTextResizeHandles(text) {
+  const size = 10;
+  ctx.fillStyle = 'yellow';
+  ctx.beginPath();
+  // Угловые ручки для изменения размера
+  ctx.arc(text.x, text.y - text.size, size, 0, Math.PI * 2); // Верхний левый угол
+  ctx.arc(text.x + ctx.measureText(text.text).width, text.y - text.size, size, 0, Math.PI * 2); // Верхний правый угол
+  ctx.arc(text.x, text.y, size, 0, Math.PI * 2); // Нижний левый угол
+  ctx.arc(text.x + ctx.measureText(text.text).width, text.y, size, 0, Math.PI * 2); // Нижний правый угол
+  ctx.fill();
+}
+document.getElementById('fontSelect').addEventListener('change', function() {
+  if (selectedText) {
+      selectedText.font = this.value;
+      drawFigures();
   }
-  
+});
+
+document.getElementById('sizeSelect').addEventListener('change', function() {
+  if (selectedText) {
+      selectedText.size = this.value;
+      drawFigures();
+  }
+});
+
+document.getElementById('colorPickerFont').addEventListener('input', function() {
+  if (selectedText) {
+      selectedText.color = this.value;
+      drawFigures();
+  }
+});
 
   function drawResizeHandles(figure) {
     const size = 10;
@@ -467,23 +609,23 @@ document.getElementById("resizeButton").addEventListener("click", function () {
   
 
 
-  function getClickedFigure(x, y) {
-    for (let i = figures.length - 1; i >= 0; i--) {
+function getClickedFigure(x, y) {
+  for (let i = figures.length - 1; i >= 0; i--) {
       let figure = figures[i];
       if (figure.type === 'circle') {
-        let distance = Math.sqrt((x - figure.x) ** 2 + (y - figure.y) ** 2);
-        if (distance <= figure.radius) {
-          return figure;
-        }
+          let distance = Math.sqrt((x - figure.x) ** 2 + (y - figure.y) ** 2);
+          if (distance <= figure.radius) {
+              return figure;
+          }
       } else if (figure.type === 'rect') {
-        if (x >= figure.x && x <= figure.x + figure.width &&
-            y >= figure.y && y <= figure.y + figure.height) {
-          return figure;
-        }
+          if (x >= figure.x && x <= figure.x + figure.width &&
+              y >= figure.y && y <= figure.y + figure.height) {
+              return figure;
+          }
       }
-    }
-    return null;
   }
+  return null;
+}
 
   function getResizeHandle(x, y) {
     if (selectedFigure) {
@@ -510,65 +652,103 @@ document.getElementById("resizeButton").addEventListener("click", function () {
 
   function resizeFigure(figure, mouseX, mouseY) {
     if (figure.type === 'circle') {
-      let dx = mouseX - figure.x;
-      let dy = mouseY - figure.y;
-      figure.radius = Math.sqrt(dx * dx + dy * dy);
+        let dx = mouseX - figure.x;
+        let dy = mouseY - figure.y;
+        figure.radius = Math.sqrt(dx * dx + dy * dy);
     } else if (figure.type === 'rect') {
-      figure.width = mouseX - figure.x;
-      figure.height = mouseY - figure.y;
+        // Обновление ширины и высоты прямоугольника
+        figure.width = mouseX - figure.x;
+        figure.height = mouseY - figure.y;
+        
+        // Обработка случая, когда ширина или высота отрицательны
+        if (figure.width < 0) {
+            figure.x += figure.width;
+            figure.width = -figure.width;
+        }
+        if (figure.height < 0) {
+            figure.y += figure.height;
+            figure.height = -figure.height;
+        }
     }
-  }
+}
   
-  canvas.addEventListener('mousedown', function (e) {
+  canvas.addEventListener('mousedown', function(e) {
     let mouseX = e.offsetX;
     let mouseY = e.offsetY;
-    
+
     let resizeHandle = getResizeHandle(mouseX, mouseY);
     if (resizeHandle) {
-      isDragging = false;
-      isResizing = true;
-      offsetX = mouseX;
-      offsetY = mouseY;
+        isDragging = false;
+        isResizing = true;
+        offsetX = mouseX;
+        offsetY = mouseY;
     } else {
-      let clickedFigure = getClickedFigure(mouseX, mouseY);
-      if (clickedFigure) {
-        selectedFigure = clickedFigure;
-        isDragging = true;
-        offsetX = mouseX - selectedFigure.x;
-        offsetY = mouseY - selectedFigure.y;
-      } else {
-        selectedFigure = null;
-      }
+        let clickedFigure = getClickedFigure(mouseX, mouseY);
+        if (clickedFigure) {
+            selectedFigure = clickedFigure;
+            isDragging = true;
+            offsetX = mouseX - selectedFigure.x;
+            offsetY = mouseY - selectedFigure.y;
+        } else {
+            selectedFigure = null;
+        }
+
+        // Обработка текста
+        let textSelected = false;
+        texts.forEach(text => {
+            const textMetrics = ctx.measureText(text.text);
+            const textWidth = textMetrics.width;
+            const textHeight = text.size;
+            
+            if (mouseX > text.x && mouseX < text.x + textWidth && mouseY > text.y - textHeight && mouseY < text.y) {
+                isDraggingText = true;
+                selectedText = text;
+                offsetX = mouseX - text.x;
+                offsetY = mouseY - text.y;
+                textSelected = true;
+            }
+        });
+        
+        if (!textSelected && !clickedFigure) {
+            // Сброс флагов, если ничего не выбрано
+            isDraggingText = false;
+            selectedText = null;
+        }
     }
+    
     drawFigures();
-  });
-  
-  canvas.addEventListener('mousemove', function (e) {
-    if (isDragging && selectedFigure) {
+});
+
+canvas.addEventListener('mousemove', function(e) {
+  if (isDraggingText && selectedText) {
+      selectedText.x = e.offsetX - offsetX;
+      selectedText.y = e.offsetY - offsetY;
+      drawFigures();
+  } else if (isDragging && selectedFigure) {
       let mouseX = e.offsetX;
       let mouseY = e.offsetY;
-    
+  
       if (selectedFigure.type === 'circle') {
-        selectedFigure.x = mouseX - offsetX;
-        selectedFigure.y = mouseY - offsetY;
+          selectedFigure.x = mouseX - offsetX;
+          selectedFigure.y = mouseY - offsetY;
       } else if (selectedFigure.type === 'rect') {
-        selectedFigure.x = mouseX - offsetX;
-        selectedFigure.y = mouseY - offsetY;
+          selectedFigure.x = mouseX - offsetX;
+          selectedFigure.y = mouseY - offsetY;
       }
       drawFigures();
-    } else if (isResizing && selectedFigure) {
+  } else if (isResizing && selectedFigure) {
       resizeFigure(selectedFigure, e.offsetX, e.offsetY);
       drawFigures();
-    }
-  });
-  
-  canvas.addEventListener('mouseup', function () {
-    isDragging = false;
-    isResizing = false;
-    saveState();
-  });
-  
+  }
+});
 
+canvas.addEventListener('mouseup', function () {
+  isDragging = false;
+  isResizing = false;
+  isDraggingText = false; // Убедитесь, что это также сбрасывается
+  saveState();
+});
+  
   const buttons = document.querySelectorAll('.crop_button, .resize_button, .rotate_button, .adjust_button, .filter_button, .text_button, .decorate_button');
 
   buttons.forEach(button => {
