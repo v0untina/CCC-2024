@@ -22,9 +22,12 @@ document.addEventListener('DOMContentLoaded', function () {
   let texts = [];
   let selectedText = null;
   let isDraggingText = false;
-  let imageSelected = false; 
-
-  
+  const errorModalFile = document.getElementById("errorModalFile");
+  const closeErrorModalFile = document.getElementById("closeErrorModalFile");
+  const leaveButton = document.getElementById('leaveSite');
+  const confirmModal = document.getElementById('confirmModal');
+  const confirmLeave = document.getElementById('confirmLeave');
+  const cancelLeave = document.getElementById('cancelLeave');
 
 
   const activeIcons = {
@@ -48,6 +51,14 @@ document.addEventListener('DOMContentLoaded', function () {
   canvas.style.display = 'none';
 
   function handleFile(file) {
+    const allowedExtensions = ['jpeg', 'png'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+      errorModalFile.style.display = "block"; // Открываем модальное окно
+      return; 
+    }
+
     let reader = new FileReader();
     reader.onload = function (e) {
       image.src = e.target.result;
@@ -64,12 +75,21 @@ document.addEventListener('DOMContentLoaded', function () {
         canvas.classList.add('canvas-border');
         canvas.style.display = 'block';
         document.getElementById('dropArea').classList.add('hidden');
-        saveState(); // Save initial state
+        saveState(); 
       };
     };
     reader.readAsDataURL(file);
   }
+  closeErrorModalFile.addEventListener('click', function () {
+    errorModalFile.style.display = "none"; // Закрываем модальное окно
+  });
 
+  // Закрытие модального окна при клике вне его
+  window.addEventListener('click', function (event) {
+    if (event.target === errorModalFile) {
+      errorModalFile.style.display = "none"; // Закрываем модальное окно
+    }
+  });
   function handleDrop(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -114,9 +134,9 @@ function saveState() {
     let imageData = canvas.toDataURL();
     let state = {
         image: imageData,
-        figures: figures.map(figure => ({ ...figure })), // Клонируем фигуры
+        figures: figures.map(figure => ({ ...figure })), 
         filters: ctx.filter,
-        position: { x: imageX, y: imageY }, // Положение изображения
+        position: { x: imageX, y: imageY }, 
         angle: currentAngle,
         isFlippedHorizontally: isFlippedHorizontally,
         isFlippedVertically: isFlippedVertically
@@ -126,16 +146,14 @@ function saveState() {
     historyStep = history.length - 1;
 }
 
-
-  
 function restoreState(state) {
   let img = new Image();
   img.src = state.image;
   img.onload = function () {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0);
-      ctx.filter = state.filters; // Восстанавливаем фильтры
-      figures = state.figures; // Восстанавливаем фигуры
+      ctx.filter = state.filters; 
+      figures = state.figures; 
       drawFigures();
   };
 }
@@ -161,7 +179,7 @@ function restoreState(state) {
 
   document.querySelector('.save_crop-button').addEventListener('click', function () {
     cropImage();
-    saveState(); // Сохраняем текущее состояние после обрезки
+    saveState(); 
   });
 
   function cropImage() {
@@ -170,33 +188,88 @@ function restoreState(state) {
 
     let newWidth, newHeight;
 
-    // Рассчитываем новые размеры в зависимости от выбранного соотношения сторон и направления
     if (cropDirection === 'horizontal') {
-      newWidth = canvasWidth;
-      newHeight = canvasWidth / cropRatio;
-      if (newHeight > canvasHeight) {
-        newHeight = canvasHeight;
-        newWidth = newHeight * cropRatio;
-      }
-    } else {
-      newHeight = canvasHeight;
-      newWidth = canvasHeight / cropRatio;
-      if (newWidth > canvasWidth) {
         newWidth = canvasWidth;
-        newHeight = newWidth * cropRatio;
-      }
+        newHeight = canvasWidth / cropRatio;
+        if (newHeight > canvasHeight) {
+            newHeight = canvasHeight;
+            newWidth = newHeight * cropRatio;
+        }
+    } else {
+        newHeight = canvasHeight;
+        newWidth = canvasHeight / cropRatio;
+        if (newWidth > canvasWidth) {
+            newWidth = canvasWidth;
+            newHeight = newWidth * cropRatio;
+        }
     }
 
-    // Обрезаем изображение
+    let imgData = ctx.getImageData(0, 0, canvasWidth, canvasHeight);
+    let currentState = {
+        image: imgData,
+        figures: figures,
+        texts: texts
+    };
+
     const croppedImage = ctx.getImageData((canvasWidth - newWidth) / 2, (canvasHeight - newHeight) / 2, newWidth, newHeight);
     
-    // Устанавливаем новый размер canvas
     canvas.width = newWidth;
     canvas.height = newHeight;
 
-    // Отображаем обрезанное изображение
     ctx.putImageData(croppedImage, 0, 0);
-  }
+
+    figures = currentState.figures.map(figure => {
+        if (figure.type === 'circle') {
+            if (isWithinCropArea(figure, (canvasWidth - newWidth) / 2, (canvasHeight - newHeight) / 2, newWidth, newHeight)) {
+                return {
+                    ...figure,
+                    x: (figure.x - (canvasWidth - newWidth) / 2) * (newWidth / canvasWidth),
+                    y: (figure.y - (canvasHeight - newHeight) / 2) * (newHeight / canvasHeight),
+                    radius: figure.radius * Math.min(newWidth / canvasWidth, newHeight / canvasHeight)
+                };
+            } else {
+                return null; 
+            }
+        } else if (figure.type === 'rect') {
+            if (isWithinCropArea(figure, (canvasWidth - newWidth) / 2, (canvasHeight - newHeight) / 2, newWidth, newHeight)) {
+                return {
+                    ...figure,
+                    x: (figure.x - (canvasWidth - newWidth) / 2) * (newWidth / canvasWidth),
+                    y: (figure.y - (canvasHeight - newHeight) / 2) * (newHeight / canvasHeight),
+                    width: figure.width * (newWidth / canvasWidth),
+                    height: figure.height * (newHeight / canvasHeight)
+                };
+            } else {
+                return null; 
+            }
+        }
+    }).filter(figure => figure !== null);
+
+    texts = currentState.texts.map(text => ({
+        ...text,
+        x: (text.x - (canvasWidth - newWidth) / 2) * (newWidth / canvasWidth),
+        y: (text.y - (canvasHeight - newHeight) / 2) * (newHeight / canvasHeight),
+        size: text.size * Math.min(newWidth / canvasWidth, newHeight / canvasHeight)
+    }));
+
+    drawFigures();
+    saveState();
+}
+
+function isWithinCropArea(figure, cropX, cropY, cropWidth, cropHeight) {
+    if (figure.type === 'circle') {
+        let circleX = figure.x;
+        let circleY = figure.y;
+        let radius = figure.radius;
+        return (circleX + radius > cropX && circleX - radius < cropX + cropWidth &&
+                circleY + radius > cropY && circleY - radius < cropY + cropHeight);
+    } else if (figure.type === 'rect') {
+        return (figure.x + figure.width > cropX && figure.x < cropX + cropWidth &&
+                figure.y + figure.height > cropY && figure.y < cropY + cropHeight);
+    }
+    return false;
+}
+
   
   document.querySelector('.none_filter').addEventListener('click', function() {
     applyImageFilter('none');
@@ -278,8 +351,6 @@ function restoreState(state) {
     saveState();
 }
 
-
-
   document.getElementById("redoButton").addEventListener("click", function () {
     if (historyStep < history.length - 1) {
       historyStep++;
@@ -289,6 +360,7 @@ function restoreState(state) {
 
   document.getElementById("resetButton").addEventListener("click", function () {
     if (originalImageData) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       canvas.width = originalImageData.width;
       canvas.height = originalImageData.height;
       ctx.putImageData(originalImageData, 0, 0);
@@ -347,8 +419,8 @@ function restoreState(state) {
 
     let text = {
         type: 'text',
-        x: 100,  // Начальная позиция X
-        y: 100,  // Начальная позиция Y
+        x: 100,
+        y: 100,
         text: textValue,
         font: font,
         size: size,
@@ -404,27 +476,33 @@ function drawFigures() {
       const textMetrics = ctx.measureText(text.text);
       const textWidth = textMetrics.width;
       const textHeight = text.size;
-      ctx.strokeStyle = 'yellow';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(text.x, text.y - textHeight, textWidth, textHeight);
-      
+
       if (text === selectedText) {
+          ctx.strokeStyle = 'yellow';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(text.x, text.y - textHeight, textWidth, textHeight);
           drawTextResizeHandles(text);
       }
   });
 }
 
 function drawTextResizeHandles(text) {
-  const size = 10;
+  const size = 10; 
+  const textMetrics = ctx.measureText(text.text);
+  const textWidth = textMetrics.width;
+  const textHeight = text.size;
+
   ctx.fillStyle = 'yellow';
   ctx.beginPath();
-  // Угловые ручки для изменения размера
-  ctx.arc(text.x, text.y - text.size, size, 0, Math.PI * 2); // Верхний левый угол
-  ctx.arc(text.x + ctx.measureText(text.text).width, text.y - text.size, size, 0, Math.PI * 2); // Верхний правый угол
-  ctx.arc(text.x, text.y, size, 0, Math.PI * 2); // Нижний левый угол
-  ctx.arc(text.x + ctx.measureText(text.text).width, text.y, size, 0, Math.PI * 2); // Нижний правый угол
+  
+
+  ctx.rect(text.x - size / 2, text.y - textHeight - size / 2, size, size); 
+  ctx.rect(text.x + textWidth - size / 2, text.y - textHeight - size / 2, size, size); 
+  ctx.rect(text.x - size / 2, text.y - size / 2, size, size); 
+  ctx.rect(text.x + textWidth - size / 2, text.y - size / 2, size, size); 
   ctx.fill();
 }
+
 document.getElementById('fontSelect').addEventListener('change', function() {
   if (selectedText) {
       selectedText.font = this.value;
@@ -446,73 +524,77 @@ document.getElementById('colorPickerFont').addEventListener('input', function() 
   }
 });
 
-  function drawResizeHandles(figure) {
-    const size = 10;
-    ctx.fillStyle = 'yellow';
-    ctx.beginPath();
+function drawResizeHandles(figure) {
+  const size = 10; 
+  const offset = 10; 
 
-    if (figure.type === 'circle') {
-      // Ручки для круга
-      ctx.arc(figure.x + figure.radius, figure.y, size, 0, Math.PI * 2);
-      ctx.arc(figure.x - figure.radius, figure.y, size, 0, Math.PI * 2);
-      ctx.arc(figure.x, figure.y + figure.radius, size, 0, Math.PI * 2);
-      ctx.arc(figure.x, figure.y - figure.radius, size, 0, Math.PI * 2);
-    } else if (figure.type === 'rect') {
-      // Ручки для прямоугольника
-      ctx.arc(figure.x, figure.y, size, 0, Math.PI * 2);
-      ctx.arc(figure.x + figure.width, figure.y, size, 0, Math.PI * 2);
-      ctx.arc(figure.x, figure.y + figure.height, size, 0, Math.PI * 2);
-      ctx.arc(figure.x + figure.width, figure.y + figure.height, size, 0, Math.PI * 2);
-    }
+  ctx.fillStyle = 'blue';
+  ctx.beginPath();
 
-    ctx.fill();
+  if (figure.type === 'circle') {
+    const points = [
+        { x: figure.x + figure.radius, y: figure.y }, 
+        { x: figure.x - figure.radius, y: figure.y }, 
+        { x: figure.x, y: figure.y + figure.radius }, 
+        { x: figure.x, y: figure.y - figure.radius }  
+    ];
+    
+    points.forEach(point => {
+        ctx.rect(point.x - size / 2, point.y - size / 2, size, size);
+    });
+  } else if (figure.type === 'rect') {
+      ctx.rect(figure.x - offset, figure.y - offset, size, size); 
+      ctx.rect(figure.x + figure.width - size + offset, figure.y - offset, size, size); 
+      ctx.rect(figure.x - offset, figure.y + figure.height - size + offset, size, size); 
+      ctx.rect(figure.x + figure.width - size + offset, figure.y + figure.height - size + offset, size, size); 
   }
+  ctx.fill();
+}
 
-  document.getElementById("addCircleButton").addEventListener("click", function () {
-    showColorInfo();
-    let circle = {
+document.getElementById("addCircleButton").addEventListener("click", function () {
+  showColorInfo();
+  let circle = {
       type: 'circle',
       x: 150,
       y: 150,
       radius: 50,
       color: "rgba(255,0,0,0.5)"
-    };
-    figures.push(circle);
-    selectedFigure = circle;
-    drawFigures();
-    saveState();
-  });
+  };
+  figures.push(circle);
+  selectedFigure = circle;
+  drawFigures();
+  saveState();
+});
 
-  document.getElementById("addRectButton").addEventListener("click", function () {
-    showColorInfo();
-    let rect = {
+document.getElementById("addRectButton").addEventListener("click", function () {
+  showColorInfo();
+  let rect = {
       type: 'rect',
       x: 200,
       y: 200,
       width: 100,
       height: 50,
       color: "rgba(0,0,255,0.5)"
-    };
-    figures.push(rect);
-    selectedFigure = rect;
-    drawFigures();
-    saveState();
-  });
+  };
+  figures.push(rect);
+  selectedFigure = rect;
+  drawFigures();
+  saveState();
+});
+
 
   function resizeImage(newWidth, newHeight) {
-    // Сохранение текущих данных изображения, фильтров, положения, и состояния
     let imgData = canvas.toDataURL();
     let currentState = {
         image: imgData,
         figures: figures,
         filters: ctx.filter,
-        position: { x: imageX, y: imageY }, // Положение изображения
+        position: { x: imageX, y: imageY }, 
         angle: currentAngle,
         isFlippedHorizontally: isFlippedHorizontally,
         isFlippedVertically: isFlippedVertically
     };
 
-    // Перерисовка изображения с новым размером
     canvas.width = newWidth;
     canvas.height = newHeight;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -520,10 +602,8 @@ document.getElementById('colorPickerFont').addEventListener('input', function() 
     let img = new Image();
     img.src = imgData;
     img.onload = function() {
-        // Применение фильтров
         ctx.filter = currentState.filters;
         
-        // Восстановление положения и состояния поворота и отражения
         ctx.save();
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate(currentState.angle * Math.PI / 180);
@@ -531,41 +611,103 @@ document.getElementById('colorPickerFont').addEventListener('input', function() 
         ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
         ctx.restore();
 
-        // Восстановление и отрисовка фигур
-        figures = currentState.figures; // Восстанавливаем фигуры
+        figures = currentState.figures.map(figure => {
+            if (figure.type === 'circle') {
+                return {
+                    ...figure,
+                    x: figure.x * (newWidth / canvas.width),
+                    y: figure.y * (newHeight / canvas.height),
+                    radius: figure.radius * Math.min(newWidth / canvas.width, newHeight / canvas.height)
+                };
+            } else if (figure.type === 'rect') {
+                return {
+                    ...figure,
+                    x: figure.x * (newWidth / canvas.width),
+                    y: figure.y * (newHeight / canvas.height),
+                    width: figure.width * (newWidth / canvas.width),
+                    height: figure.height * (newHeight / canvas.height)
+                };
+            }
+        });
+
+        texts = texts.map(text => ({
+            ...text,
+            x: text.x * (newWidth / canvas.width),
+            y: text.y * (newHeight / canvas.height),
+            size: text.size * Math.min(newWidth / canvas.width, newHeight / canvas.height)
+        }));
+
         drawFigures();
-        saveState(); // Сохраняем новое состояние
+        saveState(); 
     };
 }
 
 
 document.getElementById("resizeButton").addEventListener("click", function () {
-    let newWidth = document.getElementById("resizeWidth").value;
-    let newHeight = document.getElementById("resizeHeight").value;
-    let keepAspectRatio = document.getElementById("keepAspectRatio").checked;
+  let widthInput = document.getElementById("resizeWidth");
+  let heightInput = document.getElementById("resizeHeight");
+  let newWidth = widthInput.value;
+  let newHeight = heightInput.value;
+  let keepAspectRatio = document.getElementById("keepAspectRatio").checked;
 
-    newWidth = parseInt(newWidth);
-    newHeight = parseInt(newHeight);
-    if (newWidth > MAX_WIDTH) {
-        newWidth = MAX_WIDTH;
-    }
-    if (newHeight > MAX_HEIGHT) {
-        newHeight = MAX_HEIGHT;
-    }
+  widthInput.classList.remove("input-error");
+  heightInput.classList.remove("input-error");
 
-    if (keepAspectRatio) {
-        let aspectRatio = canvas.width / canvas.height;
-        if (newWidth / newHeight > aspectRatio) {
-            newWidth = newHeight * aspectRatio;
-        } else {
-            newHeight = newWidth / aspectRatio;
-        }
-    }
+  let hasError = false;
+  if (newWidth === "") {
+      widthInput.classList.add("input-error");
+      hasError = true;
+  }
+  if (newHeight === "") {
+      heightInput.classList.add("input-error");
+      hasError = true;
+  }
 
-    resizeImage(newWidth, newHeight);
+  if (hasError) {
+      let modal = document.getElementById("errorModal");
+      modal.style.display = "block";
+      return; 
+  }
+
+  newWidth = parseInt(newWidth);
+  newHeight = parseInt(newHeight);
+
+  if (isNaN(newWidth) || isNaN(newHeight)) {
+      document.getElementById("errorMessage").textContent = "Пожалуйста, введите корректные числовые значения для ширины и высоты.";
+      let modal = document.getElementById("errorModal");
+      modal.style.display = "block";
+      return;
+  }
+
+  if (newWidth > MAX_WIDTH) {
+      newWidth = MAX_WIDTH;
+  }
+  if (newHeight > MAX_HEIGHT) {
+      newHeight = MAX_HEIGHT;
+  }
+
+  if (keepAspectRatio) {
+      let aspectRatio = canvas.width / canvas.height;
+      if (newWidth / newHeight > aspectRatio) {
+          newWidth = newHeight * aspectRatio;
+      } else {
+          newHeight = newWidth / aspectRatio;
+      }
+  }
+
+  resizeImage(newWidth, newHeight);
 });
-  
 
+document.querySelector(".close").addEventListener("click", function () {
+  document.getElementById("errorModal").style.display = "none";
+});
+
+window.addEventListener("click", function(event) {
+  let modal = document.getElementById("errorModal");
+  if (event.target === modal) {
+      modal.style.display = "none";
+  }
+});
 
 function getClickedFigure(x, y) {
   for (let i = figures.length - 1; i >= 0; i--) {
@@ -614,11 +756,9 @@ function getClickedFigure(x, y) {
         let dy = mouseY - figure.y;
         figure.radius = Math.sqrt(dx * dx + dy * dy);
     } else if (figure.type === 'rect') {
-        // Обновление ширины и высоты прямоугольника
         figure.width = mouseX - figure.x;
         figure.height = mouseY - figure.y;
         
-        // Обработка случая, когда ширина или высота отрицательны
         if (figure.width < 0) {
             figure.x += figure.width;
             figure.width = -figure.width;
@@ -630,84 +770,79 @@ function getClickedFigure(x, y) {
     }
 }
   
-canvas.addEventListener('mousedown', function(e) {
-  let mouseX = e.offsetX;
-  let mouseY = e.offsetY;
-
-  let resizeHandle = getResizeHandle(mouseX, mouseY);
-  if (resizeHandle) {
-      isDragging = false;
-      isResizing = true;
-      offsetX = mouseX;
-      offsetY = mouseY;
-  } else {
-      let clickedFigure = getClickedFigure(mouseX, mouseY);
-      if (clickedFigure) {
-          selectedFigure = clickedFigure;
-          isDragging = true;
-          offsetX = mouseX - selectedFigure.x;
-          offsetY = mouseY - selectedFigure.y;
-      } else {
-          selectedFigure = null;
-      }
-
-      // Обработка текста
-      let textSelected = false;
-      texts.forEach(text => {
-          const textMetrics = ctx.measureText(text.text);
-          const textWidth = textMetrics.width;
-          const textHeight = text.size;
-          
-          if (mouseX > text.x && mouseX < text.x + textWidth && mouseY > text.y - textHeight && mouseY < text.y) {
-              isDraggingText = true;
-              selectedText = text;
-              offsetX = mouseX - text.x;
-              offsetY = mouseY - text.y;
-              textSelected = true;
-          }
-      });
-      
-      if (!textSelected && !clickedFigure) {
-          // Сброс флагов, если ничего не выбрано
-          isDraggingText = false;
-          selectedText = null;
-      }
-  }
-  
-  drawFigures();
-});
-
-canvas.addEventListener('mousemove', function(e) {
-if (isDraggingText && selectedText) {
-    selectedText.x = e.offsetX - offsetX;
-    selectedText.y = e.offsetY - offsetY;
-    drawFigures();
-} else if (isDragging && selectedFigure) {
+  canvas.addEventListener('mousedown', function(e) {
     let mouseX = e.offsetX;
     let mouseY = e.offsetY;
 
-    if (selectedFigure.type === 'circle') {
-        selectedFigure.x = mouseX - offsetX;
-        selectedFigure.y = mouseY - offsetY;
-    } else if (selectedFigure.type === 'rect') {
-        selectedFigure.x = mouseX - offsetX;
-        selectedFigure.y = mouseY - offsetY;
+    let resizeHandle = getResizeHandle(mouseX, mouseY);
+    if (resizeHandle) {
+        isDragging = false;
+        isResizing = true;
+        offsetX = mouseX;
+        offsetY = mouseY;
+    } else {
+        let clickedFigure = getClickedFigure(mouseX, mouseY);
+        if (clickedFigure) {
+            selectedFigure = clickedFigure;
+            isDragging = true;
+            offsetX = mouseX - selectedFigure.x;
+            offsetY = mouseY - selectedFigure.y;
+        } else {
+            selectedFigure = null;
+        }
+
+        let textSelected = false;
+        texts.forEach(text => {
+            const textMetrics = ctx.measureText(text.text);
+            const textWidth = textMetrics.width;
+            const textHeight = text.size;
+            
+            if (mouseX > text.x && mouseX < text.x + textWidth && mouseY > text.y - textHeight && mouseY < text.y) {
+                isDraggingText = true;
+                selectedText = text;
+                offsetX = mouseX - text.x;
+                offsetY = mouseY - text.y;
+                textSelected = true;
+            }
+        });
+        
+        if (!textSelected && !clickedFigure) {
+            isDraggingText = false;
+            selectedText = null;
+        }
     }
     drawFigures();
-} else if (isResizing && selectedFigure) {
-    resizeFigure(selectedFigure, e.offsetX, e.offsetY);
-    drawFigures();
-}
+});
+
+canvas.addEventListener('mousemove', function(e) {
+  if (isDraggingText && selectedText) {
+      selectedText.x = e.offsetX - offsetX;
+      selectedText.y = e.offsetY - offsetY;
+      drawFigures();
+  } else if (isDragging && selectedFigure) {
+      let mouseX = e.offsetX;
+      let mouseY = e.offsetY;
+  
+      if (selectedFigure.type === 'circle') {
+          selectedFigure.x = mouseX - offsetX;
+          selectedFigure.y = mouseY - offsetY;
+      } else if (selectedFigure.type === 'rect') {
+          selectedFigure.x = mouseX - offsetX;
+          selectedFigure.y = mouseY - offsetY;
+      }
+      drawFigures();
+  } else if (isResizing && selectedFigure) {
+      resizeFigure(selectedFigure, e.offsetX, e.offsetY);
+      drawFigures();
+  }
 });
 
 canvas.addEventListener('mouseup', function () {
-isDragging = false;
-isResizing = false;
-isDraggingText = false;
-saveState();
+  isDragging = false;
+  isResizing = false;
+  isDraggingText = false;
+  saveState();
 });
-
-
   
   const buttons = document.querySelectorAll('.crop_button, .resize_button, .rotate_button, .adjust_button, .filter_button, .text_button, .decorate_button');
 
@@ -737,21 +872,45 @@ saveState();
     });
   }
 
+  leaveButton.addEventListener('click', function() {
+    confirmModal.style.display = 'block';
+  });
+
+  confirmLeave.addEventListener('click', function() {
+    confirmModal.style.display = 'none';
+    window.close();
+  });
+
+  cancelLeave.addEventListener('click', function() {
+    confirmModal.style.display = 'none';
+  });
+
+  window.onclick = function(event) {
+    if (event.target == confirmModal) {
+      confirmModal.style.display = 'none';
+    }
+  }
+
   document.getElementById("resizeSettings").addEventListener("click", function () {
     showRightButtons(["resizeInput"]);
   });
+
   document.getElementById("adjustSettings").addEventListener("click", function () {
     showRightButtons(["adjusts"]);
   });
+
   document.getElementById("textSettings").addEventListener("click", function () {
     showRightButtons(["text"]);
   });
+
   document.getElementById("decorateSettings").addEventListener("click", function () {
     showRightButtons(["decorate"]);
   });
+
   document.getElementById("cropSettings").addEventListener("click", function () {
     showRightButtons(["crop"]);
   });
+
   document.getElementById("filterSettings").addEventListener("click", function () {
     showRightButtons(["filters"]);
   });

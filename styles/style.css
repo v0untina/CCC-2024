@@ -4,9 +4,10 @@
   border-top:none;
   border-radius:16px;
   display: flex;
-  font-family: 'Avenir Next Cyr';
   justify-content: space-between;
   background-color: rgba(255, 255, 255, 0.842);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
 }
 
 .header__left{
@@ -46,6 +47,9 @@
   font-size: 16px;
   margin-right: 7px;
   margin-top: 8px;
+  font-family: "Avenir",sans-serif;
+  font-weight: 400;
+  font-style: normal;
 }
 
 .reset_all{
@@ -58,14 +62,17 @@
   font-size: 16px;
   margin-right: 7px;
   margin-top: 8px;
+  font-family: "Avenir",sans-serif;
+  font-weight: 400;
+  font-style: normal;
 }
 
 .name__project{
-  font-size: 20px;
+  font-size: 18px;
   margin-top: 17px;
-  font-weight: bold;
-  font-family: Avenir Next;
-  font-weight: 500;
+  font-family: "Avenir",sans-serif;
+  font-weight: 400;
+  font-style: normal;
   line-height: 24px;
   text-align: left;
 }
@@ -108,6 +115,7 @@
   border: 2px solid rgba(78, 78, 78, 0.185);
   border-radius: 10px;
   background-color: rgba(255, 255, 255, 0.842);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .left-sidebar .first_chooses,
@@ -413,7 +421,7 @@
 }
 
 .circle_button{
-  background-image: url(../images/1shapes.png);
+  background-image: url(../images/2shape.png);
 }
 
 .circle_button:focus, .rect_button:focus{
@@ -421,7 +429,7 @@
 }
 
 .rect_button{
-  background-image: url(../images/2shape.png);
+  background-image: url(../images/1shapes.png);
 }
 
 .color_picker{
@@ -449,6 +457,175 @@
 
 .save_crop-button:active{
   background-color: #076ba5e5;
+  cursor: pointer;
+}
+
+.font_label,.size_label{
+  display: flex;
+  font-size: 17px;
+}
+
+.font_select{
+  width: 160px;
+  height: 40px;
+  border: 1px solid rgba(128, 128, 128, 0.418);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.font{
+  margin-bottom: 10px;
+}
+
+.size{
+  margin-bottom: 10px;
+}
+
+.size_select{
+  width: 160px;
+  height: 40px;
+  border: 1px solid rgba(128, 128, 128, 0.418);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.create-text{
+  width: 80px;
+  height: 40px;
+  border-radius: 24px;
+  border: none;
+  background-color:rgba(18, 163, 248, 1);
+  color: white;
+  font-size:16px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+.create-text:hover{
+  background-color: #12a4f8d2;
+  cursor: pointer;
+}
+
+.modal {
+  display: none; 
+  position: fixed; 
+  z-index: 1; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  overflow: auto; 
+  background-color: rgb(0,0,0); 
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  font-size: 20px;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 530px; 
+  height: 180px; 
+  position: absolute; 
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); 
+  border-radius: 20px;
+  font-family: "Avenir",sans-serif;
+  font-weight: 520;
+  font-style: normal;
+}
+
+.error_file-label{
+  margin-top: 48px;
+}
+
+.modal_label{
+  margin-top: 48px;
+}
+
+.close_label{
+  margin-top: 40px;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  border-radius: 50%;
+  background-color: rgba(242, 245, 247, 1);
+  cursor: pointer;
+  text-align: center;
+  border: none;
+  transition: background-color 0.3s, transform 0.3s; 
+}
+
+.close:hover,
+.close:focus {
+  color: rgba(18, 163, 248, 1);
+  background-color: rgba(230, 230, 230, 1); 
+  transform: scale(1.1); 
+}
+
+.color_font{
+  margin-right: 10px;
+}
+
+.leave_button{
+  width: 83px;
+  height: 40px;
+  background-color: rgba(18, 163, 248, 1);
+  border: none;
+  border-radius: 24px;
+  font-size: 16px;
+  color: white;
+}
+
+.no-leave_button{
+  width: 83px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 1);
+  border: 1px solid rgb(177, 177, 177);
+  border-radius: 24px;
+  font-size: 16px;
+  color: black;
+}
+
+.exit_button{
+  margin-top: 50px;
+  margin-left: 310px;
+}
+
+.exit_label{
+  margin-top:20px;
+  margin-left: 10px;
+}
+
+.leave_button:hover{
+  background-color: #12a4f8d2;
+  cursor: pointer;
+}
+
+.leave_button:active{
+  background-color: #076ba5e5;
+  cursor: pointer;
+}
+
+.no-leave_button:hover{
+  background-color: rgb(192, 190, 190);
+  cursor: pointer;
+}
+
+.no-leave_button:active{
+  background-color: rgb(168, 168, 168);
   cursor: pointer;
 }
 
@@ -526,4 +703,5 @@
   border-bottom:none;
   border-radius:10px;
   background-color: rgba(255, 255, 255, 0.842);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }

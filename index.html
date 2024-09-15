@@ -4,8 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Редактор изображений</title>
-  <link rel="stylesheet" href="./fonts/fonts.css" />
+  <title>IMAGE EDITOR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="./fonts/ofont.ru_Avenir Next.ttf">
   <link rel="stylesheet" href="./styles/style.css" />
   <link rel="stylesheet" href="./styles/global.css" />
 </head>
@@ -13,7 +14,7 @@
 <body>
   <header class="header">
     <div class="header__left">
-      <div class="header__left-cross-x"></div>
+      <div class="header__left-cross-x" id="leaveSite"></div>
       <div class="header__left-cross-undo" id="undoButton"></div>
       <div class="header__left-cross-redo" id="redoButton"></div>
     </div>
@@ -73,7 +74,7 @@
         <button class="add-image_button"></button>
         <p>Drop file to upload<br>or select file</p>
         <p class="text_gray">5 MB Max</p>
-        <input type="file" id="upload" accept="image/*" style="display: none;">
+        <input type="file" id="upload" accept=".jpeg, .png" style="display: none;">
         <canvas class="image_canvas" id="imageCanvas" style="display: none;"></canvas>
       </div>
     </div>
@@ -130,7 +131,6 @@
           <input type="range" id="saturation" min="0" max="200" value="100">
           <label for="exposure">Exposition</label>
           <input type="range" id="exposure" min="0" max="200" value="100">
-          <button class="submit_adjust" id="submitButton">Submit</button>
         </div>
       </div>
       <div class="hidden" id="filters">
@@ -151,59 +151,78 @@
       </div>
       <div class="hidden" id="text">
         <div class="sidebar_text">
-            <div class="font">
-                <p>Font</p>
-                <select name="font" id="fontSelect">
-                    <option value="Avenir Next">Avenir Next</option>
-                    <option value="Arial">Arial</option>
-                    <option value="Impact">Impact</option>
-                    <option value="Book Antiqua">Book Antiqua</option>
-                    <option value="Comic Sans MS">Comic Sans MS</option>
-                </select>
-            </div>
-            <div class="size">
-                <p>Size</p>
-                <select name="size" id="sizeSelect">
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                    <option value="12">12</option>
-                    <option value="14">14</option>
-                    <option value="16">16</option>
-                    <option value="18">18</option>
-                    <option value="20">20</option>
-                    <option value="24">24</option>
-                </select>
-            </div>
-            <div class="font-color">
-                <label class="color_font" for="colorPickerFont">Color</label>
-                <input class="color_picker" type="color" id="colorPickerFont">
-            </div>
-            <div class="create-text">
-                <button id="addTextButton">Add Text</button>
-            </div>
-        </div>
-    </div>    
-    <div class="hidden" id="decorate">
-      <div class="sidebar_decorate">
-        <p class="decorate_label">Shapes</p>
-        <div class="decorate_chooses">
-          <button class="circle_button" id="addCircleButton"></button>
-          <button class="rect_button" id="addRectButton"></button>
+          <div class="font">
+            <p class="font_label">Font</p>
+            <select class="font_select" name="font" id="fontSelect">
+              <option value="Avenir Next">Avenir Next</option>
+              <option value="Arial">Arial</option>
+              <option value="Impact">Impact</option>
+              <option value="Book Antiqua">Book Antiqua</option>
+              <option value="Comic Sans MS">Comic Sans MS</option>
+            </select>
+          </div>
+          <div class="size">
+            <p class="size_label">Size</p>
+            <select class="size_select" name="size" id="sizeSelect">
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+              <option value="11">11</option>
+              <option value="12">12</option>
+              <option value="14">14</option>
+              <option value="16">16</option>
+              <option value="18">18</option>
+              <option value="20">20</option>
+              <option value="24">24</option>
+            </select>
+          </div>
+          <div class="font-color">
+            <label class="color_font" for="colorPickerFont">Color</label>
+            <input class="color_picker" type="color" id="colorPickerFont">
+          </div>
+          <div>
+            <button class="create-text" id="addTextButton">Add Text</button>
+          </div>
         </div>
       </div>
-      <div class="color_info" id="colorInfo">
-        <label class="color_info-label" for="colorPicker">Color</label>
-        <input class="color_picker" type="color" id="colorPicker">
+      <div class="hidden" id="decorate">
+        <div class="sidebar_decorate">
+          <p class="decorate_label">Shapes</p>
+          <div class="decorate_chooses">
+            <button class="circle_button" id="addCircleButton"></button>
+            <button class="rect_button" id="addRectButton"></button>
+          </div>
+        </div>
+        <div class="color_info" id="colorInfo">
+          <label class="color_info-label" for="colorPicker">Color</label>
+          <input class="color_picker" type="color" id="colorPicker">
+        </div>
       </div>
     </div>
+    <div id="errorModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <p class="close_label" id="errorMessage">The width and height input fields cannot be empty</p>
+      </div>
     </div>
-
+    <div id="errorModalFile" class="modal">
+      <div class="modal-content">
+        <span class="close" id="closeErrorModalFile">&times;</span>
+        <p class="error_file-label">Only files of the following formats are accepted: .jpeg, .png</p>
+      </div>
+    </div>
+    <div id="confirmModal" class="modal">
+      <div class="modal-content">
+        <p class="exit_label">Are you sure you want to leave?</p>
+        <div class="exit_button">
+          <button class="no-leave_button" id="cancelLeave">Cancel</button>
+          <button class="leave_button" id="confirmLeave">Leave</button>
+        </div>
+      </div>
+    </div>
   </main>
   <footer class="footer">
   </footer>
   <script src="./scripts/script.js"></script>
 </body>
-
 </html>
