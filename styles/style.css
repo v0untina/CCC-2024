@@ -452,47 +452,6 @@
   cursor: pointer;
 }
 
-.rotate-left, .rotate-right, .flip-horizontal, .flip-vertical{
-  width: 74px;
-  height: 56px;
-  background-color: white;
-  border: 1px solid rgba(128, 128, 128, 0.418);
-  border-radius: 8px;
-  background-repeat: no-repeat;
-  background-position: center;
-  cursor: pointer;
-}
-
-.rotate-left{
-  background-image: url(../images/rot-right.png);
-  margin-right: 16px;
-  margin-bottom: 16px;
-}
-
-.rotate-right{
-  background-image: url(../images/rot-left.png);
-}
-
-.flip-horizontal{
-  background-image: url(../images/flip-hor.png);
-  margin-right: 16px;
-  margin-bottom: 5px;
-}
-
-.flip-vertical{
-  background-image: url(../images/flip-ver.png);
-}
-
-.rotate-left:focus, .rotate-right:focus, .flip-horizontal:focus, .flip-vertical:focus{
-  border: 2px solid rgba(18, 163, 248, 1);
-}
-
-.rotate_title,.flip_title{
-  display: flex;
-  margin-bottom: 8px;
-  font-size: 17px;
-}
-
 .checkbox__label{
   font-size: 20px;
 }

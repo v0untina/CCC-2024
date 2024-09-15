@@ -22,13 +22,14 @@ document.addEventListener('DOMContentLoaded', function () {
   let texts = [];
   let selectedText = null;
   let isDraggingText = false;
+  let imageSelected = false; 
+
   
 
 
   const activeIcons = {
     crop_button: '/images/crop-active.png',
     resize_button: '/images/resize-active.png',
-    rotate_button: '/images/rotate-active.png',
     adjust_button: '/images/adjust-active.png',
     filter_button: '/images/filters-active.png',
     text_button: '/images/text-active.png',
@@ -38,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function () {
   const defaultIcons = {
     crop_button: '/images/crop.png',
     resize_button: '/images/resize.png',
-    rotate_button: '/images/rotate.png',
     adjust_button: '/images/adjust.png',
     filter_button: '/images/filters.png',
     text_button: '/images/text.png',
@@ -317,48 +317,6 @@ function restoreState(state) {
     applyFilters();
   });
 
-  function rotateImage(angle) {
-    currentAngle = (currentAngle + angle) % 360;
-    const rad = (currentAngle * Math.PI) / 180;
-    const scaleX = isFlippedHorizontally ? -1 : 1;
-    const scaleY = isFlippedVertically ? -1 : 1;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate(rad);
-    ctx.scale(scaleX, scaleY);
-    ctx.drawImage(image, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
-    ctx.restore();
-    saveState();
-}
-
-function flipImage(direction) {
-    if (direction === 'horizontal') {
-        isFlippedHorizontally = !isFlippedHorizontally;
-    } else if (direction === 'vertical') {
-        isFlippedVertically = !isFlippedVertically;
-    }
-    rotateImage(0);
-    saveState();
-}
-
-
-  document.querySelector('.rotate-left').addEventListener('click', function () {
-    rotateImage(-90);
-  });
-
-  document.querySelector('.rotate-right').addEventListener('click', function () {
-    rotateImage(90);
-  });
-
-  document.querySelector('.flip-horizontal').addEventListener('click', function () {
-    flipImage('horizontal');
-  });
-
-  document.querySelector('.flip-vertical').addEventListener('click', function () {
-    flipImage('vertical');
-  });
   
   document.getElementById("downloadButton").addEventListener("click", function () {
     let link = document.createElement('a');
@@ -672,82 +630,84 @@ function getClickedFigure(x, y) {
     }
 }
   
-  canvas.addEventListener('mousedown', function(e) {
-    let mouseX = e.offsetX;
-    let mouseY = e.offsetY;
+canvas.addEventListener('mousedown', function(e) {
+  let mouseX = e.offsetX;
+  let mouseY = e.offsetY;
 
-    let resizeHandle = getResizeHandle(mouseX, mouseY);
-    if (resizeHandle) {
-        isDragging = false;
-        isResizing = true;
-        offsetX = mouseX;
-        offsetY = mouseY;
-    } else {
-        let clickedFigure = getClickedFigure(mouseX, mouseY);
-        if (clickedFigure) {
-            selectedFigure = clickedFigure;
-            isDragging = true;
-            offsetX = mouseX - selectedFigure.x;
-            offsetY = mouseY - selectedFigure.y;
-        } else {
-            selectedFigure = null;
-        }
+  let resizeHandle = getResizeHandle(mouseX, mouseY);
+  if (resizeHandle) {
+      isDragging = false;
+      isResizing = true;
+      offsetX = mouseX;
+      offsetY = mouseY;
+  } else {
+      let clickedFigure = getClickedFigure(mouseX, mouseY);
+      if (clickedFigure) {
+          selectedFigure = clickedFigure;
+          isDragging = true;
+          offsetX = mouseX - selectedFigure.x;
+          offsetY = mouseY - selectedFigure.y;
+      } else {
+          selectedFigure = null;
+      }
 
-        // Обработка текста
-        let textSelected = false;
-        texts.forEach(text => {
-            const textMetrics = ctx.measureText(text.text);
-            const textWidth = textMetrics.width;
-            const textHeight = text.size;
-            
-            if (mouseX > text.x && mouseX < text.x + textWidth && mouseY > text.y - textHeight && mouseY < text.y) {
-                isDraggingText = true;
-                selectedText = text;
-                offsetX = mouseX - text.x;
-                offsetY = mouseY - text.y;
-                textSelected = true;
-            }
-        });
-        
-        if (!textSelected && !clickedFigure) {
-            // Сброс флагов, если ничего не выбрано
-            isDraggingText = false;
-            selectedText = null;
-        }
-    }
-    
-    drawFigures();
+      // Обработка текста
+      let textSelected = false;
+      texts.forEach(text => {
+          const textMetrics = ctx.measureText(text.text);
+          const textWidth = textMetrics.width;
+          const textHeight = text.size;
+          
+          if (mouseX > text.x && mouseX < text.x + textWidth && mouseY > text.y - textHeight && mouseY < text.y) {
+              isDraggingText = true;
+              selectedText = text;
+              offsetX = mouseX - text.x;
+              offsetY = mouseY - text.y;
+              textSelected = true;
+          }
+      });
+      
+      if (!textSelected && !clickedFigure) {
+          // Сброс флагов, если ничего не выбрано
+          isDraggingText = false;
+          selectedText = null;
+      }
+  }
+  
+  drawFigures();
 });
 
 canvas.addEventListener('mousemove', function(e) {
-  if (isDraggingText && selectedText) {
-      selectedText.x = e.offsetX - offsetX;
-      selectedText.y = e.offsetY - offsetY;
-      drawFigures();
-  } else if (isDragging && selectedFigure) {
-      let mouseX = e.offsetX;
-      let mouseY = e.offsetY;
-  
-      if (selectedFigure.type === 'circle') {
-          selectedFigure.x = mouseX - offsetX;
-          selectedFigure.y = mouseY - offsetY;
-      } else if (selectedFigure.type === 'rect') {
-          selectedFigure.x = mouseX - offsetX;
-          selectedFigure.y = mouseY - offsetY;
-      }
-      drawFigures();
-  } else if (isResizing && selectedFigure) {
-      resizeFigure(selectedFigure, e.offsetX, e.offsetY);
-      drawFigures();
-  }
+if (isDraggingText && selectedText) {
+    selectedText.x = e.offsetX - offsetX;
+    selectedText.y = e.offsetY - offsetY;
+    drawFigures();
+} else if (isDragging && selectedFigure) {
+    let mouseX = e.offsetX;
+    let mouseY = e.offsetY;
+
+    if (selectedFigure.type === 'circle') {
+        selectedFigure.x = mouseX - offsetX;
+        selectedFigure.y = mouseY - offsetY;
+    } else if (selectedFigure.type === 'rect') {
+        selectedFigure.x = mouseX - offsetX;
+        selectedFigure.y = mouseY - offsetY;
+    }
+    drawFigures();
+} else if (isResizing && selectedFigure) {
+    resizeFigure(selectedFigure, e.offsetX, e.offsetY);
+    drawFigures();
+}
 });
 
 canvas.addEventListener('mouseup', function () {
-  isDragging = false;
-  isResizing = false;
-  isDraggingText = false; // Убедитесь, что это также сбрасывается
-  saveState();
+isDragging = false;
+isResizing = false;
+isDraggingText = false;
+saveState();
 });
+
+
   
   const buttons = document.querySelectorAll('.crop_button, .resize_button, .rotate_button, .adjust_button, .filter_button, .text_button, .decorate_button');
 
@@ -791,9 +751,6 @@ canvas.addEventListener('mouseup', function () {
   });
   document.getElementById("cropSettings").addEventListener("click", function () {
     showRightButtons(["crop"]);
-  });
-  document.getElementById("rotateSettings").addEventListener("click", function () {
-    showRightButtons(["rotate"]);
   });
   document.getElementById("filterSettings").addEventListener("click", function () {
     showRightButtons(["filters"]);
