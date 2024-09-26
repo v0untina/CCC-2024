@@ -289,6 +289,29 @@
   cursor: pointer;
 }
 
+.temperature_label{
+  font-size: 16px;
+}
+
+.temperature_step{
+  display: flex;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.custom_temperature-input{
+  width: 76px;
+  height: 30px;
+  font-size: 19px;
+  font-weight: 540;
+  border-radius: 8px;
+  border: 1px solid rgba(128, 128, 128, 0.418);
+}
+
+.custom_temperature-input:hover{
+  cursor: pointer;
+}
+
 .sidebar__checkbox{
   display: flex;
   gap: 12px;
@@ -300,6 +323,14 @@
   flex-direction: column;
   gap: 10px;
   width: 210px;
+  margin-bottom: 20px;
+}
+
+.adjust_line{
+  width: 100%;
+  background-color: rgba(78, 78, 78, 0.185);
+  height: 2px;
+  margin-bottom: 10px;
 }
 
 .sidebar_adjusts:last-child{
@@ -379,6 +410,52 @@
   border: 2px solid rgba(18, 163, 248, 1);
 }
 
+.rotate-left, .rotate-right, .flip-horizontal, .flip-vertical,.rotate-left-45,.rotate-right-45{
+  width: 74px;
+  height: 56px;
+  background-color: white;
+  border: 1px solid rgba(128, 128, 128, 0.418);
+  border-radius: 8px;
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+  margin:0 20px;
+}
+
+.rotate-left-45{
+  background-image: url(../images/rot-left45.png);
+}
+
+.rotate-right-45{
+  background-image: url(../images/rot-right45.png);
+}
+
+.rotate-left{
+  background-image: url(../images/rot-left.png);
+  margin-right: 16px;
+  margin-bottom: 16px;
+}
+.rotate-right{
+  background-image: url(../images/rot-right.png);
+}
+
+.flip-horizontal{
+  background-image: url(../images/flip-hor.png);
+  margin-right: 16px;
+  margin-bottom: 5px;
+}
+.flip-vertical{
+  background-image: url(../images/flip-vert.png);
+}
+.rotate-left:focus, .rotate-right:focus, .flip-horizontal:focus, .flip-vertical:focus,.rotate-left-45:focus,.rotate-right-45:focus{
+  border: 2px solid rgba(18, 163, 248, 1);
+}
+.rotate_title,.flip_title{
+  display: flex;
+  margin-bottom: 8px;
+  font-size: 17px;
+}
+
 .save_crop-button{
   width: 80px;
   height: 40px;
@@ -409,7 +486,7 @@
   margin-bottom: 4px;
 }
 
-.circle_button,.rect_button{
+.circle_button,.rect_button,.line_button{
   width: 74px;
   height: 74px;
   background-color: white;
@@ -420,11 +497,15 @@
   border-radius: 8px;
 }
 
+.line_button{
+  background-image: url(../images/Line.png);
+}
+
 .circle_button{
   background-image: url(../images/2shape.png);
 }
 
-.circle_button:focus, .rect_button:focus{
+.circle_button:focus, .rect_button:focus,.line_button:focus{
   border: 2px solid rgba(18, 163, 248, 1);
 }
 
@@ -520,6 +601,57 @@
   overflow: auto; 
   background-color: rgb(0,0,0); 
   background-color: rgba(0,0,0,0.4);
+}
+
+.edit-line{
+  margin-top: 17px;
+  display: none;
+}
+
+.custom_angle{
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  text-align: center;
+}
+
+.custom_angle-input{
+  width: 140px;
+  height: 30px;
+  border-radius: 5px;
+  outline: none;
+  border: 1px solid rgba(128, 128, 128, 0.418);
+  font-size: 15px;
+}
+
+.custom_angle-input:hover{
+  border: 2px solid rgba(18, 164, 248, 0.747);
+}
+
+.rotate-custom_button{
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid rgba(128, 128, 128, 0.418);
+  font-size: 15px;
+}
+
+.custom_angle_label{
+  margin-top: 10px;
+  display: flex;
+  font-size: 17px;
+}
+
+.rotate-custom_button:hover{
+  cursor: pointer;
+  background-color:rgba(18, 164, 248, 0.747);
+  color: white;
+}
+
+.rotate-custom_button:active{
+  cursor: pointer;
+  background-color:rgb(18, 164, 248);
+  color: white;
 }
 
 .modal-content {

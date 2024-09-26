@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let offsetX, offsetY;
   let lastSlider = null;
   let currentAngle = 0;
+  let rotationAngle = 0;
   let isFlippedHorizontally = false;
   let isFlippedVertically = false;
   let imageX = 0, imageY = 0;
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const activeIcons = {
     crop_button: '/images/crop-active.png',
     resize_button: '/images/resize-active.png',
+    rotate_button:'/images/rotate-active.png',
     adjust_button: '/images/adjust-active.png',
     filter_button: '/images/filters-active.png',
     text_button: '/images/text-active.png',
@@ -42,6 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const defaultIcons = {
     crop_button: '/images/crop.png',
     resize_button: '/images/resize.png',
+    rotate_button:'/images/rotate.png',
     adjust_button: '/images/adjust.png',
     filter_button: '/images/filters.png',
     text_button: '/images/text.png',
@@ -158,7 +161,6 @@ function restoreState(state) {
   };
 }
 
-
   document.querySelector('.crop_ratio').addEventListener('change', function () {
     const selectedRatio = this.value;
     if (selectedRatio === "1") {
@@ -242,6 +244,18 @@ function restoreState(state) {
             } else {
                 return null; 
             }
+        } else if (figure.type === 'line') {
+            if (isWithinCropArea(figure, (canvasWidth - newWidth) / 2, (canvasHeight - newHeight) / 2, newWidth, newHeight)) {
+                return {
+                    ...figure,
+                    x1: (figure.x1 - (canvasWidth - newWidth) / 2) * (newWidth / canvasWidth),
+                    y1: (figure.y1 - (canvasHeight - newHeight) / 2) * (newHeight / canvasHeight),
+                    x2: (figure.x2 - (canvasWidth - newWidth) / 2) * (newWidth / canvasWidth),
+                    y2: (figure.y2 - (canvasHeight - newHeight) / 2) * (newHeight / canvasHeight)
+                };
+            } else {
+                return null;
+            }
         }
     }).filter(figure => figure !== null);
 
@@ -251,24 +265,29 @@ function restoreState(state) {
         y: (text.y - (canvasHeight - newHeight) / 2) * (newHeight / canvasHeight),
         size: text.size * Math.min(newWidth / canvasWidth, newHeight / canvasHeight)
     }));
-
     drawFigures();
     saveState();
 }
 
 function isWithinCropArea(figure, cropX, cropY, cropWidth, cropHeight) {
-    if (figure.type === 'circle') {
-        let circleX = figure.x;
-        let circleY = figure.y;
-        let radius = figure.radius;
-        return (circleX + radius > cropX && circleX - radius < cropX + cropWidth &&
-                circleY + radius > cropY && circleY - radius < cropY + cropHeight);
-    } else if (figure.type === 'rect') {
-        return (figure.x + figure.width > cropX && figure.x < cropX + cropWidth &&
-                figure.y + figure.height > cropY && figure.y < cropY + cropHeight);
-    }
-    return false;
+  if (figure.type === 'circle') {
+      let circleX = figure.x;
+      let circleY = figure.y;
+      let radius = figure.radius;
+      return (circleX + radius > cropX && circleX - radius < cropX + cropWidth &&
+              circleY + radius > cropY && circleY - radius < cropY + cropHeight);
+  } else if (figure.type === 'rect') {
+      return (figure.x + figure.width > cropX && figure.x < cropX + cropWidth &&
+              figure.y + figure.height > cropY && figure.y < cropY + cropHeight);
+  } else if (figure.type === 'line') {
+      return (
+          (figure.x1 > cropX && figure.x1 < cropX + cropWidth && figure.y1 > cropY && figure.y1 < cropY + cropHeight) ||
+          (figure.x2 > cropX && figure.x2 < cropX + cropWidth && figure.y2 > cropY && figure.y2 < cropY + cropHeight)
+      );
+  }
+  return false;
 }
+
 
   
   document.querySelector('.none_filter').addEventListener('click', function() {
@@ -328,28 +347,70 @@ function isWithinCropArea(figure, cropX, cropY, cropWidth, cropHeight) {
   document.getElementById("contrast").addEventListener("input", applyFilters);
   document.getElementById("saturation").addEventListener("input", applyFilters);
   document.getElementById("exposure").addEventListener("input", applyFilters);
+  document.getElementById("temperature").addEventListener("input", applyFilters);
+  document.getElementById("customTemperature").addEventListener("input", applyFilters);
 
-  function applyFilters() {
+  document.getElementById("temperature").addEventListener("input", function() {
+    const temperatureValue = this.value;
+    document.getElementById("customTemperature").value = temperatureValue;
+    applyFilters(); 
+});
+
+document.getElementById("customTemperature").addEventListener("input", function() {
+    const customTemperatureValue = this.value;
+    document.getElementById("temperature").value = customTemperatureValue;
+    applyFilters(); 
+});
+
+function applyFilters() {
     const brightness = document.getElementById("brightness").value;
     const contrast = document.getElementById("contrast").value;
     const saturation = document.getElementById("saturation").value;
     const exposure = document.getElementById("exposure").value;
+  
+    const temperatureSlider = document.getElementById("temperature");
+    const customTemperatureInput = document.getElementById("customTemperature");
+    
+    const temperature = temperatureSlider.value || customTemperatureInput.value;
 
     const exposureEffect = exposure / 100;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Применение фильтров
+  
     ctx.filter = `brightness(${brightness * exposureEffect}%) contrast(${contrast}%) saturate(${saturation}%)`;
+  
+    const kelvinToRGB = kelvinToColor(temperature);
+  
+    ctx.filter += ` sepia(${kelvinToRGB.sepia}%)`;
+  
     ctx.save();
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate(currentAngle * Math.PI / 180);
     ctx.scale(isFlippedHorizontally ? -1 : 1, isFlippedVertically ? -1 : 1);
     ctx.drawImage(image, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
     ctx.restore();
+  
     drawFigures();
     saveState();
 }
+
+  function kelvinToColor(kelvin) {
+    let sepiaValue = 0;
+  
+    // Преобразуем значение температуры в эффект сепии
+    if (kelvin < 6500) {
+      sepiaValue = (6500 - kelvin) / 65; // Становится "теплее"
+    } else {
+      sepiaValue = -(kelvin - 6500) / 65; // Становится "холоднее"
+    }
+  
+    // Ограничиваем значения от 0 до 100
+    sepiaValue = Math.max(0, Math.min(100, sepiaValue));
+  
+    return {
+      sepia: sepiaValue
+    };
+  }
 
   document.getElementById("redoButton").addEventListener("click", function () {
     if (historyStep < history.length - 1) {
@@ -465,14 +526,26 @@ function drawFigures() {
               drawResizeHandles(figure);
           }
       }
-  });
+     else if (figure.type === 'line') {
+      ctx.moveTo(figure.x1, figure.y1);  // Начальная точка линии
+      ctx.lineTo(figure.x2, figure.y2);  // Конечная точка линии
+      ctx.strokeStyle = figure.color;
+      ctx.lineWidth = figure.borderSize  // Толщина линии
+      ctx.stroke();
+
+      // Если линия выбрана
+      if (figure === selectedFigure) {
+          ctx.stroke();  
+          drawResizeHandles(figure);  // Рисуем resize handles на концах линии
+      }
+  }
+});
 
   texts.forEach(text => {
       ctx.font = `${text.size}px ${text.font}`;
       ctx.fillStyle = text.color;
       ctx.fillText(text.text, text.x, text.y);
       
-      // Рисуем прямоугольный бордер вокруг текста
       const textMetrics = ctx.measureText(text.text);
       const textWidth = textMetrics.width;
       const textHeight = text.size;
@@ -485,6 +558,13 @@ function drawFigures() {
       }
   });
 }
+
+document.getElementById('borderSizeSlider').addEventListener('input', function() {
+  if (selectedFigure && selectedFigure.type === 'line') {
+    selectedFigure.borderSize = this.value;  
+    drawFigures(); 
+  }
+});
 
 function drawTextResizeHandles(text) {
   const size = 10; 
@@ -528,7 +608,7 @@ function drawResizeHandles(figure) {
   const size = 10; 
   const offset = 10; 
 
-  ctx.fillStyle = 'blue';
+  ctx.fillStyle = 'yellow';
   ctx.beginPath();
 
   if (figure.type === 'circle') {
@@ -547,9 +627,15 @@ function drawResizeHandles(figure) {
       ctx.rect(figure.x + figure.width - size + offset, figure.y - offset, size, size); 
       ctx.rect(figure.x - offset, figure.y + figure.height - size + offset, size, size); 
       ctx.rect(figure.x + figure.width - size + offset, figure.y + figure.height - size + offset, size, size); 
+  } else if (figure.type === 'line') {
+      // Рисуем обработчики на концах линии
+      ctx.rect(figure.x1 - size / 2, figure.y1 - size / 2, size, size); // Начало линии
+      ctx.rect(figure.x2 - size / 2, figure.y2 - size / 2, size, size); // Конец линии
   }
+
   ctx.fill();
 }
+
 
 document.getElementById("addCircleButton").addEventListener("click", function () {
   showColorInfo();
@@ -570,10 +656,10 @@ document.getElementById("addRectButton").addEventListener("click", function () {
   showColorInfo();
   let rect = {
       type: 'rect',
-      x: 200,
-      y: 200,
-      width: 100,
-      height: 50,
+      x: 200,// Начальная точка по X
+      y: 200,// Начальная точка по Y
+      width: 100,// Конечная точка по X
+      height: 50,// Конечная точка по Y
       color: "rgba(0,0,255,0.5)"
   };
   figures.push(rect);
@@ -582,6 +668,22 @@ document.getElementById("addRectButton").addEventListener("click", function () {
   saveState();
 });
 
+document.getElementById("addLineButton").addEventListener("click", function () {
+  showColorInfo();
+  let line = {
+      type: 'line',
+      x1: 100, // Начальная точка по X
+      y1: 100, // Начальная точка по Y
+      x2: 200, // Конечная точка по X
+      y2: 200, // Конечная точка по Y
+      color: "rgba(0,0,255,0.5)", 
+      borderSize: 3 
+  };
+  figures.push(line);
+  selectedFigure = line;
+  drawFigures();
+  saveState();
+});
 
   function resizeImage(newWidth, newHeight) {
     let imgData = canvas.toDataURL();
@@ -642,6 +744,74 @@ document.getElementById("addRectButton").addEventListener("click", function () {
     };
 }
 
+function rotateImage(angle) {
+  currentAngle = (currentAngle + angle) % 360;
+  const rad = (currentAngle * Math.PI) / 180;
+  const scaleX = isFlippedHorizontally ? -1 : 1;
+  const scaleY = isFlippedVertically ? -1 : 1;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate(rad);
+  ctx.scale(scaleX, scaleY);
+  ctx.drawImage(image, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+  ctx.restore();
+  saveState();
+}
+function flipImage(direction) {
+  if (direction === 'horizontal') {
+      isFlippedHorizontally = !isFlippedHorizontally;
+  } else if (direction === 'vertical') {
+      isFlippedVertically = !isFlippedVertically;
+  }
+  rotateImage(0);
+  saveState();
+}
+document.querySelector('.rotate-left').addEventListener('click', function () {
+  rotateImage(-90);
+  saveState()
+});
+document.querySelector('.rotate-right').addEventListener('click', function () {
+  rotateImage(90);
+  saveState()
+});
+document.querySelector('.rotate-left-45').addEventListener('click', function () {
+  rotateImage(-45);
+  saveState()
+});
+document.querySelector('.rotate-right-45').addEventListener('click', function () {
+  rotateImage(45);
+  saveState()
+});
+document.querySelector('.flip-horizontal').addEventListener('click', function () {
+  flipImage('horizontal');
+  saveState()
+});
+document.querySelector('.flip-vertical').addEventListener('click', function () {
+  flipImage('vertical');
+  saveState()
+});
+
+const addLineButton = document.getElementById('addLineButton');
+const editLine = document.getElementById('editLine');
+
+addLineButton.addEventListener('click', () => {
+  editLine.style.display = 'block';
+});
+
+document.getElementById('rotate-custom').addEventListener('click', function () {
+  const customAngle = parseFloat(document.getElementById('customAngle').value);
+  if (!isNaN(customAngle)) {
+      // Ограничение угла произвольного поворота
+      if (customAngle > 180) {
+          customAngle = 180;
+      } else if (customAngle < -180) {
+          customAngle = -180;
+      }
+      rotateImage(customAngle);
+      saveState();
+  }
+});
 
 document.getElementById("resizeButton").addEventListener("click", function () {
   let widthInput = document.getElementById("resizeWidth");
@@ -696,6 +866,7 @@ document.getElementById("resizeButton").addEventListener("click", function () {
   }
 
   resizeImage(newWidth, newHeight);
+  saveState();
 });
 
 document.querySelector(".close").addEventListener("click", function () {
@@ -708,6 +879,13 @@ window.addEventListener("click", function(event) {
       modal.style.display = "none";
   }
 });
+
+function isPointOnLine(x, y, x1, y1, x2, y2, threshold = 5) {
+  const distToStart = Math.sqrt((x - x1) ** 2 + (y - y1) ** 2);
+  const distToEnd = Math.sqrt((x - x2) ** 2 + (y - y2) ** 2);
+  const lineLength = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  return Math.abs(distToStart + distToEnd - lineLength) <= threshold;
+}
 
 function getClickedFigure(x, y) {
   for (let i = figures.length - 1; i >= 0; i--) {
@@ -722,43 +900,66 @@ function getClickedFigure(x, y) {
               y >= figure.y && y <= figure.y + figure.height) {
               return figure;
           }
+      } else if (figure.type === 'line') {
+        if (isPointOnLine(x, y, figure.x1, figure.y1, figure.x2, figure.y2)) {
+            return figure;
+        }
       }
   }
   return null;
 }
 
-  function getResizeHandle(x, y) {
-    if (selectedFigure) {
-      const size = 10;
-      if (selectedFigure.type === 'circle') {
-        const radius = selectedFigure.radius;
-        if ((Math.abs(x - (selectedFigure.x + radius)) <= size && Math.abs(y - selectedFigure.y) <= size) ||
-            (Math.abs(x - (selectedFigure.x - radius)) <= size && Math.abs(y - selectedFigure.y) <= size) ||
-            (Math.abs(x - selectedFigure.x) <= size && Math.abs(y - (selectedFigure.y + radius)) <= size) ||
-            (Math.abs(x - selectedFigure.x) <= size && Math.abs(y - (selectedFigure.y - radius)) <= size)) {
-          return 'circle';
-        }
-      } else if (selectedFigure.type === 'rect') {
-        if ((Math.abs(x - selectedFigure.x) <= size && Math.abs(y - selectedFigure.y) <= size) ||
-            (Math.abs(x - (selectedFigure.x + selectedFigure.width)) <= size && Math.abs(y - selectedFigure.y) <= size) ||
-            (Math.abs(x - selectedFigure.x) <= size && Math.abs(y - (selectedFigure.y + selectedFigure.height)) <= size) ||
-            (Math.abs(x - (selectedFigure.x + selectedFigure.width)) <= size && Math.abs(y - (selectedFigure.y + selectedFigure.height)) <= size)) {
-          return 'rect';
-        }
+function getResizeHandle(x, y) {
+  const size = 10;
+  const lineBorderPadding = 5;
+
+  if (selectedFigure) {
+    if (selectedFigure.type === 'circle') {
+      const radius = selectedFigure.radius;
+      if (
+        (Math.abs(x - (selectedFigure.x + radius)) <= size && Math.abs(y - selectedFigure.y) <= size) ||
+        (Math.abs(x - (selectedFigure.x - radius)) <= size && Math.abs(y - selectedFigure.y) <= size) ||
+        (Math.abs(x - selectedFigure.x) <= size && Math.abs(y - (selectedFigure.y + radius)) <= size) ||
+        (Math.abs(x - selectedFigure.x) <= size && Math.abs(y - (selectedFigure.y - radius)) <= size)
+      ) {
+        return 'circle';
+      }
+    } else if (selectedFigure.type === 'rect') {
+      if (
+        (Math.abs(x - selectedFigure.x) <= size && Math.abs(y - selectedFigure.y) <= size) ||
+        (Math.abs(x - (selectedFigure.x + selectedFigure.width)) <= size && Math.abs(y - selectedFigure.y) <= size) ||
+        (Math.abs(x - selectedFigure.x) <= size && Math.abs(y - (selectedFigure.y + selectedFigure.height)) <= size) ||
+        (Math.abs(x - (selectedFigure.x + selectedFigure.width)) <= size && Math.abs(y - (selectedFigure.y + selectedFigure.height)) <= size)
+      ) {
+        return 'rect';
+      }
+    } else if (selectedFigure.type === 'line') {
+      // Проверяем попадание в начало или конец линии
+      if (
+        (Math.abs(x - selectedFigure.x1) <= size && Math.abs(y - selectedFigure.y1) <= size)
+      ) {
+        return 'line-start';
+      }
+      if (
+        (Math.abs(x - selectedFigure.x2) <= size && Math.abs(y - selectedFigure.y2) <= size)
+      ) {
+        return 'line-end';
       }
     }
-    return null;
   }
+  return null;
+}
 
-  function resizeFigure(figure, mouseX, mouseY) {
+  function resizeFigure(figure, mouseX, mouseY, handleType) {
     if (figure.type === 'circle') {
         let dx = mouseX - figure.x;
         let dy = mouseY - figure.y;
         figure.radius = Math.sqrt(dx * dx + dy * dy);
+
     } else if (figure.type === 'rect') {
         figure.width = mouseX - figure.x;
         figure.height = mouseY - figure.y;
-        
+
         if (figure.width < 0) {
             figure.x += figure.width;
             figure.width = -figure.width;
@@ -767,81 +968,102 @@ function getClickedFigure(x, y) {
             figure.y += figure.height;
             figure.height = -figure.height;
         }
+
+    } else if (figure.type === 'line') {
+        // Изменение координат концов линии
+        if (handleType === 'line-start') {
+            figure.x1 = mouseX;
+            figure.y1 = mouseY;
+        } else if (handleType === 'line-end') {
+            figure.x2 = mouseX;
+            figure.y2 = mouseY;
+        }
     }
 }
   
-  canvas.addEventListener('mousedown', function(e) {
-    let mouseX = e.offsetX;
-    let mouseY = e.offsetY;
+canvas.addEventListener('mousedown', function(e) {
+  let mouseX = e.offsetX;
+  let mouseY = e.offsetY;
 
-    let resizeHandle = getResizeHandle(mouseX, mouseY);
-    if (resizeHandle) {
-        isDragging = false;
-        isResizing = true;
-        offsetX = mouseX;
-        offsetY = mouseY;
-    } else {
-        let clickedFigure = getClickedFigure(mouseX, mouseY);
-        if (clickedFigure) {
-            selectedFigure = clickedFigure;
-            isDragging = true;
-            offsetX = mouseX - selectedFigure.x;
-            offsetY = mouseY - selectedFigure.y;
-        } else {
-            selectedFigure = null;
-        }
+  let resizeHandle = getResizeHandle(mouseX, mouseY);
+  if (resizeHandle) {
+      isDragging = false;
+      isResizing = true;
+      offsetX = mouseX;
+      offsetY = mouseY;
+      handleType = resizeHandle;
+  } else {
+      let clickedFigure = getClickedFigure(mouseX, mouseY);
+      if (clickedFigure) {
+          selectedFigure = clickedFigure;
+          isDragging = true;
+          offsetX = mouseX - (selectedFigure.type === 'line' ? selectedFigure.x1 : selectedFigure.x);
+          offsetY = mouseY - (selectedFigure.type === 'line' ? selectedFigure.y1 : selectedFigure.y);
+      } else {
+          selectedFigure = null;
+      }
 
-        let textSelected = false;
-        texts.forEach(text => {
-            const textMetrics = ctx.measureText(text.text);
-            const textWidth = textMetrics.width;
-            const textHeight = text.size;
-            
-            if (mouseX > text.x && mouseX < text.x + textWidth && mouseY > text.y - textHeight && mouseY < text.y) {
-                isDraggingText = true;
-                selectedText = text;
-                offsetX = mouseX - text.x;
-                offsetY = mouseY - text.y;
-                textSelected = true;
-            }
-        });
-        
-        if (!textSelected && !clickedFigure) {
-            isDraggingText = false;
-            selectedText = null;
-        }
-    }
-    drawFigures();
+      let textSelected = false;
+      texts.forEach(text => {
+          const textMetrics = ctx.measureText(text.text);
+          const textWidth = textMetrics.width;
+          const textHeight = text.size;
+          
+          if (mouseX > text.x && mouseX < text.x + textWidth && mouseY > text.y - textHeight && mouseY < text.y) {
+              isDraggingText = true;
+              selectedText = text;
+              offsetX = mouseX - text.x;
+              offsetY = mouseY - text.y;
+              textSelected = true;
+          }
+      });
+      
+      if (!textSelected && !clickedFigure) {
+          isDraggingText = false;
+          selectedText = null;
+      }
+  }
+  drawFigures();
 });
 
 canvas.addEventListener('mousemove', function(e) {
-  if (isDraggingText && selectedText) {
-      selectedText.x = e.offsetX - offsetX;
-      selectedText.y = e.offsetY - offsetY;
-      drawFigures();
-  } else if (isDragging && selectedFigure) {
-      let mouseX = e.offsetX;
-      let mouseY = e.offsetY;
-  
-      if (selectedFigure.type === 'circle') {
-          selectedFigure.x = mouseX - offsetX;
-          selectedFigure.y = mouseY - offsetY;
-      } else if (selectedFigure.type === 'rect') {
-          selectedFigure.x = mouseX - offsetX;
-          selectedFigure.y = mouseY - offsetY;
-      }
-      drawFigures();
-  } else if (isResizing && selectedFigure) {
-      resizeFigure(selectedFigure, e.offsetX, e.offsetY);
-      drawFigures();
-  }
+if (isDraggingText && selectedText) {
+    selectedText.x = e.offsetX - offsetX;
+    selectedText.y = e.offsetY - offsetY;
+    drawFigures();
+} else if (isDragging && selectedFigure) {
+    let mouseX = e.offsetX;
+    let mouseY = e.offsetY;
+
+    if (selectedFigure.type === 'circle') {
+        selectedFigure.x = mouseX - offsetX;
+        selectedFigure.y = mouseY - offsetY;
+    } else if (selectedFigure.type === 'rect') {
+        selectedFigure.x = mouseX - offsetX;
+        selectedFigure.y = mouseY - offsetY;
+    } else if (selectedFigure.type === 'line') {
+        let dx = mouseX - offsetX;
+        let dy = mouseY - offsetY;
+        let diffX = selectedFigure.x2 - selectedFigure.x1;
+        let diffY = selectedFigure.y2 - selectedFigure.y1;
+
+        selectedFigure.x1 = dx;
+        selectedFigure.y1 = dy;
+        selectedFigure.x2 = dx + diffX;
+        selectedFigure.y2 = dy + diffY;
+    }
+    drawFigures();
+} else if (isResizing && selectedFigure) {
+    resizeFigure(selectedFigure, e.offsetX, e.offsetY, handleType);
+    drawFigures();
+}
 });
 
 canvas.addEventListener('mouseup', function () {
-  isDragging = false;
-  isResizing = false;
-  isDraggingText = false;
-  saveState();
+isDragging = false;
+isResizing = false;
+isDraggingText = false;
+saveState();
 });
   
   const buttons = document.querySelectorAll('.crop_button, .resize_button, .rotate_button, .adjust_button, .filter_button, .text_button, .decorate_button');
@@ -914,4 +1136,8 @@ canvas.addEventListener('mouseup', function () {
   document.getElementById("filterSettings").addEventListener("click", function () {
     showRightButtons(["filters"]);
   });
+  
+  document.getElementById("rotateSettings").addEventListener("click",function(){
+    showRightButtons(["rotate"]);
+  })
 });

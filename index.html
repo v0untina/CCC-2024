@@ -44,6 +44,10 @@
           <img src="/images/resize.png" alt="resize" class="icon">
           Resize
         </button>
+        <button class="rotate_button" id="rotateSettings">
+          <img src="/images/rotate.png" alt="rotate" class="icon">
+          Rotate and flip
+        </button>
         <button class="adjust_button" id="adjustSettings">
           <img src="/images/adjust.png" alt="adjust" class="icon">
           Adjust
@@ -121,6 +125,29 @@
           <button class="submit_button" id="resizeButton">Submit</button>
         </div>
       </div>
+      <div class="hidden" id="rotate">
+        <div class="sidebar_rotate">
+          <div class="rotate">
+            <p class="rotate_title">Rotate</p>
+            <div class="rotate_buttons">
+              <button class="rotate-left"></button>
+              <button class="rotate-right"></button>
+              <button class="rotate-left-45"></button>
+              <button class="rotate-right-45"></button>
+            </div>
+          </div>
+          <div class="flip">
+            <p class="flip_title">Flip</p>
+            <button class="flip-horizontal"></button>
+            <button class="flip-vertical"></button>
+          </div>
+          <p class="custom_angle_label">Custom Angle</p>
+          <div class="custom_angle">
+            <input class="custom_angle-input" type="number" id="customAngle" placeholder="Enter the angle" />
+            <button class="rotate-custom_button" id="rotate-custom">Rotate</button>
+          </div>
+        </div>
+      </div>
       <div class="hidden" id="adjusts">
         <div class="sidebar_adjusts">
           <label for="brightness">Brightness</label>
@@ -131,6 +158,15 @@
           <input type="range" id="saturation" min="0" max="200" value="100">
           <label for="exposure">Exposition</label>
           <input type="range" id="exposure" min="0" max="200" value="100">
+        </div>
+        <div class="adjust_line"></div>
+        <div class="custom_filter">
+          <div class="temperature_step">
+            <label  class="temperature_label"for="temperature">Temperature (K)</label>
+            <input type="range" id="temperature" min="1000" max="10000" value="5500" step="100">
+          </div>
+          <input class="custom_temperature-input" type="number" id="customTemperature" min="1000" max="10000"
+            placeholder="Enter temperature (K)" value="5500" />
         </div>
       </div>
       <div class="hidden" id="filters">
@@ -191,11 +227,16 @@
           <div class="decorate_chooses">
             <button class="circle_button" id="addCircleButton"></button>
             <button class="rect_button" id="addRectButton"></button>
+            <button class="line_button" id="addLineButton"></button>
           </div>
         </div>
         <div class="color_info" id="colorInfo">
           <label class="color_info-label" for="colorPicker">Color</label>
           <input class="color_picker" type="color" id="colorPicker">
+        </div>
+        <div class="edit-line" id="editLine">
+          <label for="edit-line_label">Border Size</label>
+          <input type="range" id="borderSizeSlider" min="1" max="50" value="3">
         </div>
       </div>
     </div>
@@ -225,4 +266,5 @@
   </footer>
   <script src="./scripts/script.js"></script>
 </body>
+
 </html>
